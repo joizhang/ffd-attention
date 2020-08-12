@@ -67,7 +67,7 @@ def main():
 
         best_acc1 = max(acc1, best_acc1)
 
-        if epoch == 1 or epoch == args.epochs:
+        if epoch == args.epochs:
             print('Save model')
             torch.save({
                 'epoch': epoch,
@@ -80,7 +80,7 @@ def main():
 
 if __name__ == '__main__':
     """
-    python train.py --data-dir /data/xinlin/mini-dffd --arch vgg16 --epoch 10 --batch-size 100
-    python train.py --data-dir /data/xinlin/mini-dffd --arch xception --epoch 10 --batch-size 50
+    python train.py --data-dir /data/xinlin/dffd --arch vgg16 --epoch 10 --batch-size 100
+    python train.py --data-dir /data/xinlin/dffd --arch xception --epoch 10 --batch-size 50
     """
     main()

@@ -30,11 +30,12 @@ class DffdDataset(Dataset):
         self.classes = classes
         self.data = []
         for mode_path in glob(os.path.join(data_root, "*/{}".format(mode))):
-            print(mode_path)
-            label = self.classes[DFFD[Path(mode_path).parent.name]]
-            file_names = os.listdir(mode_path)
-            for file_name in file_names:
-                self.data.append((os.path.join(mode_path, file_name), label))
+            if DFFD[Path(mode_path).parent.name] in self.classes:
+                print(mode_path)
+                label = self.classes[DFFD[Path(mode_path).parent.name]]
+                file_names = os.listdir(mode_path)
+                for file_name in file_names:
+                    self.data.append((os.path.join(mode_path, file_name), label))
 
     def __getitem__(self, index):
         image_path, label = self.data[index]

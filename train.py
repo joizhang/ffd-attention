@@ -32,14 +32,14 @@ def main():
     # os.makedirs('%s/modules/%s' % (args.save_dir, sig), exist_ok=True)
 
     print("Initializing Networks")
-    classes = {'Real': 0, 'Fake': 1}
-    model = models.__dict__[args.arch](pretrained=True, num_classes=len(classes))
+    model = models.__dict__[args.arch](pretrained=True)
     model.cuda()
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CrossEntropyLoss().cuda()
     # writer = SummaryWriter('%s/logs/%s' % (args.save_dir, sig))
 
     print("Initializing Data Loader")
+    classes = {'Real': 0, 'Fake': 1}
     # img_paths = {'Real': [], 'Fake': []}
     transform = transforms.Compose([
         transforms.ToPILImage(),

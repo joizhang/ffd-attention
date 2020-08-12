@@ -62,7 +62,6 @@ def show_metrics(args):
         if fpr[i] > 0.05 and tpr_5_00 == -1:
             tpr_5_00 = tpr[i - 1]
     roc_auc = auc(fpr, tpr)
-    plt.plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold (AUC = %0.4f)' % roc_auc)
     metrics_template = "ACC: {:f} AUC: {:f} EER: {:f} TPR@0.01: {:f} TPR@0.10: {:f} TPR@1.00: {:f}"
     print(metrics_template.format(acc, roc_auc, eer, tpr_0_01, tpr_0_10, tpr_1_00))
 

@@ -11,12 +11,15 @@ Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
 Attributes manipulation: FaceAPP, StarGAN
 Entire face synthesis: PGGAN, StyleGAN
 """
-DFFD = {'ffhq': 'Real', 'faceapp': 'Fake', 'stargan': 'Fake', 'pggan': 'Fake'}
+DFFD = {'ffhq': 'Real', 'celeba': 'Real',
+        'faceapp': 'Fake', 'stargan': 'Fake',
+        'pggan_v1': 'Fake_Entire', 'pggan_v2': 'Fake_Entire',
+        'stylegan_celeba': 'Fake_Entire', 'stylegan_ffhq': 'Fake_Entire'}
 
 
 class DffdDataset(Dataset):
 
-    def __init__(self, data_root, mode, transform, classes=None, seed=111):
+    def __init__(self, data_root, mode, transform, classes=None):
         """
         Args:
             classes (dict): {'Real': 0, 'Fake_Entire': 1, 'Fake_Partial': 2}

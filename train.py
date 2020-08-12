@@ -47,13 +47,11 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-    train_data = DffdDataset(data_root=args.data_dir, mode='train', transform=transform, classes=classes,
-                             seed=args.seed)
+    train_data = DffdDataset(data_root=args.data_dir, mode='train', transform=transform, classes=classes)
     # plot_image(train_data)
     train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
                               pin_memory=True)
-    val_data = DffdDataset(data_root=args.data_dir, mode='validation', transform=transform, classes=classes,
-                           seed=args.seed)
+    val_data = DffdDataset(data_root=args.data_dir, mode='validation', transform=transform, classes=classes)
     val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
                             pin_memory=True)
 

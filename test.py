@@ -5,8 +5,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from sklearn import metrics
-from sklearn.metrics import accuracy_score, auc
+from sklearn.metrics import accuracy_score, auc, roc_curve
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -28,7 +27,7 @@ def show_metrics(args):
     # Accuracy
     acc = accuracy_score(y_true, y_pred)
     # ROC
-    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_score, drop_intermediate=False)
+    fpr, tpr, thresholds = roc_curve(y_true, y_score, drop_intermediate=False)
     print(fpr, tpr)
     fnr = 1 - tpr
     # Equal error rate
@@ -63,7 +62,7 @@ def show_metrics(args):
         if fpr[i] > 0.05 and tpr_5_00 == -1:
             tpr_5_00 = tpr[i - 1]
     roc_auc = auc(fpr, tpr)
-    plt.plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold (AUC = %0.2f)' % roc_auc)
+    plt.plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold (AUC = %0.4f)' % roc_auc)
     metrics_template = "ACC: {:f} AUC: {:f} EER: {:f} TPR@0.01: {:f} TPR@0.10: {:f} TPR@1.00: {:f}"
     print(metrics_template.format(acc, roc_auc, eer, tpr_0_01, tpr_0_10, tpr_1_00))
 
@@ -98,7 +97,8 @@ def test(test_loader, model, args):
 
             pred = torch.argmax(output, dim=1)
             y_pred.extend(pred.tolist())
-            score, _ = torch.max(torch.nn.functional.softmax(output, dim=1), dim=1)
+            score = torch.nn.functional.softmax(output, dim=1)
+            score = score[:, 1]
             y_score.extend(score.tolist())
 
             # measure accuracy and record loss

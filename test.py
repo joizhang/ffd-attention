@@ -129,8 +129,7 @@ def main():
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-        test_data = DffdDataset(data_root=args.data_dir, mode='test', transform=transform, classes=classes,
-                                seed=args.seed)
+        test_data = DffdDataset(data_root=args.data_dir, mode='test', transform=transform, classes=classes)
         test_loader = DataLoader(test_data, num_workers=1, batch_size=args.batch_size, shuffle=False, drop_last=False,
                                  pin_memory=True)
         test(test_loader, model, args)

@@ -24,10 +24,14 @@ def get_original_video_paths(root_dir):
     return glob(os.path.join(root_dir, "Celeb-real/*.mp4"))
 
 
+def temp_func(x):
+    return x
+
+
 def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
     detector = face_detector.__dict__[detector_cls]()
     dataset = VideoDataset(videos)
-    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
+    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1, collate_fn=temp_func)
     for item in tqdm(loader):
         video, indices, frames = item[0]
         video_id = os.path.splitext(os.path.basename(video))[0]

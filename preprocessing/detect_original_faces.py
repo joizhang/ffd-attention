@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from glob import glob
 from typing import Type
 
 from torch.utils.data.dataloader import DataLoader
@@ -8,7 +9,6 @@ from tqdm import tqdm
 
 from preprocessing import face_detector, VideoDataset
 from preprocessing.face_detector import VideoFaceDetector
-from preprocessing.utils import get_original_video_paths
 
 
 def parse_args():
@@ -20,14 +20,14 @@ def parse_args():
     return args
 
 
-def temp_func(x):
-    return x
+def get_original_video_paths(root_dir):
+    return glob(os.path.join(root_dir, "Celeb-real/*.mp4"))
 
 
 def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
-    detector = face_detector.__dict__[detector_cls](device="cpu")
+    detector = face_detector.__dict__[detector_cls]()
     dataset = VideoDataset(videos)
-    loader = DataLoader(dataset, shuffle=False, num_workers=1, batch_size=1, collate_fn=temp_func)
+    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
     for item in tqdm(loader):
         video, indices, frames = item[0]
         video_id = os.path.splitext(os.path.basename(video))[0]

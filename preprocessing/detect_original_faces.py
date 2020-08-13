@@ -21,7 +21,11 @@ def parse_args():
 
 
 def get_original_video_paths(root_dir):
-    return glob(os.path.join(root_dir, "Celeb-real/*.mp4"))
+    paths = []
+    for video_fold in os.listdir(root_dir):
+        if 'real' in video_fold:
+            paths.extend(glob(os.path.join(root_dir, video_fold, "*.mp4")))
+    return paths
 
 
 def temp_func(x):

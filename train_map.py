@@ -14,8 +14,8 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from models.vgg_map import vgg16
-from models.xception_map import xception
+from training.models.vgg_map import vgg16
+from training.models.xception_map import xception
 
 torch.backends.deterministic = True
 

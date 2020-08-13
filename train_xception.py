@@ -1,19 +1,3 @@
-import argparse
-import datetime
-import os
-import random
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from tensorboardX import SummaryWriter
-from torch.utils.data import DataLoader
-
-from datasets.classifier_dataset import DffdDataset
-from models.xception import xception
-import models
-import matplotlib.pyplot as plt
-
 # def main():
 #     opt = parse_args()
 #     print(opt)

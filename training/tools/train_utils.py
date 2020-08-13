@@ -4,8 +4,8 @@ import time
 import matplotlib.pyplot as plt
 import torch
 
-import models
-from tools.model_utils import ProgressMeter, AverageMeter, accuracy
+from training import models
+from training.tools.model_utils import ProgressMeter, AverageMeter, accuracy
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")

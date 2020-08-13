@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 __all__ = ['xception']
 
-from tools.model_utils import load_pretrained
+from training.tools.model_utils import load_pretrained
 
 default_cfgs = {
     'xception': {

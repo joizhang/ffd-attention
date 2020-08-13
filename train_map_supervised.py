@@ -13,7 +13,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from models.xception_map import xception
+from training.models.xception_map import xception
 
 torch.backends.deterministic = True
 

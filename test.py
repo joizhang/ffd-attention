@@ -2,7 +2,6 @@ import os
 import pickle
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, auc, roc_curve
@@ -10,10 +9,10 @@ from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-import models
-from datasets.classifier_dataset import DffdDataset
-from tools.model_utils import AverageMeter, ProgressMeter, accuracy
-from tools.train_utils import parse_args
+from training import models
+from training.datasets.classifier_dataset import DffdDataset
+from training.tools.model_utils import AverageMeter, ProgressMeter, accuracy
+from training.tools.train_utils import parse_args
 
 torch.backends.cudnn.benchmark = True
 

@@ -4,16 +4,15 @@ import os
 import torch
 import torch.nn as nn
 from imageio import imread
-from models.xception_map import xception
-from models.vgg_map import vgg16
+from training.models.xception_map import xception
+from training.models.vgg_map import vgg16
 from torchvision import transforms
 import torchvision.utils as vutils
 from torch.utils.data import DataLoader
 from sklearn import metrics
-from sklearn.metrics import accuracy_score, roc_auc_score, auc
+from sklearn.metrics import accuracy_score, auc
 import matplotlib.pyplot as plt
 import pickle
-from scipy.io import savemat
 
 torch.backends.deterministic = True
 

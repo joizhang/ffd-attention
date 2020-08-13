@@ -8,15 +8,13 @@ import torch
 print(torch.cuda.is_available())
 import torch.nn as nn
 import torch.optim as optim
-import torchvision
 from imageio import imread
-from models.vgg_pca_new import vgg16
+from training.models import vgg16
 from tensorboardX import SummaryWriter
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
 torch.backends.deterministic = True
-import scipy.io
 
 #################################################################################################################
 

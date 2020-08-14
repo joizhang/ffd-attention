@@ -47,3 +47,8 @@ class DffdDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+class CelebDFV2Dataset(Dataset):
+    def __init__(self, data_root, ):
+        pass

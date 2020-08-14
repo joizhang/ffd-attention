@@ -2,9 +2,7 @@ import argparse
 import json
 import os
 from functools import partial
-from glob import glob
 from multiprocessing.pool import Pool
-from pathlib import Path
 
 import cv2
 from tqdm import tqdm
@@ -32,7 +30,7 @@ def extract_video(param, root_dir, crops_dir):
     frames_num = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     for i in range(frames_num):
         capture.grab()
-        if i % 10 != 0:
+        if i % 10 != 0 and i != frames_num - 1:
             continue
         success, frame = capture.retrieve()
         if not success or str(i) not in bboxes_dict:
@@ -57,20 +55,19 @@ def extract_video(param, root_dir, crops_dir):
 def get_video_paths(root_dir):
     paths = []
     for video_fold in os.listdir(root_dir):
-        if 'real' not in os.path.basename(video_fold) and 'synthesis' not in os.path.basename(video_fold):
+        if 'real' not in video_fold and 'synthesis' not in video_fold:
             continue
-        for video_path in os.listdir(video_fold):
-            dir = Path(json_path).parent
-            with open(json_path, "r") as f:
-                metadata = json.load(f)
-            for k, v in metadata.items():
-                original = v.get("original", None)
-                if not original:
-                    original = k
+        for video_path in os.listdir(os.path.join(root_dir, video_fold)):
+            if 'real' in video_fold:
+                bboxes_path = os.path.join(root_dir, "boxes", video_path[:-4] + ".json")
+            else:
+                video_path_split = video_path.split('_')
+                assert len(video_path_split) == 3
+                original = '{}_{}'.format(video_path_split[0], video_path_split[2])
                 bboxes_path = os.path.join(root_dir, "boxes", original[:-4] + ".json")
-                if not os.path.exists(bboxes_path):
-                    continue
-                paths.append((os.path.join(dir, k), bboxes_path))
+            if not os.path.exists(bboxes_path):
+                continue
+            paths.append((os.path.join(root_dir, video_fold, video_path), bboxes_path))
 
     return paths
 

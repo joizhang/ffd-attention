@@ -106,6 +106,7 @@ temp/
 data/
 logs/
 saved/
+.pytest_cache/
 
 *.gz
 *.csv

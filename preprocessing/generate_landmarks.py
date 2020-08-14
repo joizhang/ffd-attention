@@ -60,12 +60,13 @@ def save_landmarks(ori_id, root_dir):
 
 def main():
     args = parse_args()
-    ids = get_original_video_paths(args.root_dir)
+    originals = get_original_video_paths(args.root_dir)
+    print(len(originals))
     os.makedirs(os.path.join(args.root_dir, "landmarks"), exist_ok=True)
     with Pool(processes=1) as p:
-        with tqdm(total=len(ids)) as pbar:
+        with tqdm(total=len(originals)) as pbar:
             func = partial(save_landmarks, root_dir=args.root_dir)
-            for v in p.imap_unordered(func, ids):
+            for v in p.imap_unordered(func, originals):
                 pbar.update()
 
 

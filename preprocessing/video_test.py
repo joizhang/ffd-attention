@@ -3,6 +3,7 @@ from collections import OrderedDict
 from PIL import Image
 
 if __name__ == '__main__':
+    # TODO: This file will be deleted
     capture = cv2.VideoCapture('F:\\Celeb-DF-v2\\Celeb-real\\id27_0005.mp4')
     frames_num = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     frames = OrderedDict()

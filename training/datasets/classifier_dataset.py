@@ -50,5 +50,12 @@ class DffdDataset(Dataset):
 
 
 class CelebDFV2Dataset(Dataset):
+
     def __init__(self, data_root, ):
+        pass
+
+    def __getitem__(self, index):
+        pass
+
+    def __len__(self):
         pass

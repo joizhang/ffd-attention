@@ -11,13 +11,42 @@ from torchvision import transforms
 
 from config import Config
 from training import models
-from training.datasets.classifier_dataset import DffdDataset
+from training.datasets.classifier_dataset import DffdDataset, CelebDFV2Dataset
 from training.tools.train_utils import parse_args, train, validate
 
 torch.backends.cudnn.benchmark = True
 
 CONFIG = Config()
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+
+def get_dffd_dataloader(args):
+    classes = {'Real': 0, 'Fake': 1}
+    # img_paths = {'Real': [], 'Fake': []}
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    train_data = DffdDataset(data_root=args.data_dir, mode='train', transform=transform, classes=classes)
+    # plot_image(train_data)
+    train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
+                              pin_memory=True)
+    val_data = DffdDataset(data_root=args.data_dir, mode='validation', transform=transform, classes=classes)
+    val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
+                            pin_memory=True)
+    return train_loader, val_loader
+
+
+def get_celeba_df_dataloader(args):
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    train_data = CelebDFV2Dataset(data_root=args.data_dir, )
 
 
 def main():
@@ -39,21 +68,7 @@ def main():
     # writer = SummaryWriter('%s/logs/%s' % (args.save_dir, sig))
 
     print("Initializing Data Loader")
-    classes = {'Real': 0, 'Fake': 1}
-    # img_paths = {'Real': [], 'Fake': []}
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    train_data = DffdDataset(data_root=args.data_dir, mode='train', transform=transform, classes=classes)
-    # plot_image(train_data)
-    train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
-                              pin_memory=True)
-    val_data = DffdDataset(data_root=args.data_dir, mode='validation', transform=transform, classes=classes)
-    val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
-                            pin_memory=True)
+    train_loader, val_loader = get_dffd_dataloader(args)
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
@@ -76,6 +91,7 @@ def main():
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict(),
             }, os.path.join('weights', '{}_dffd.pt'.format(args.arch)))
+
 
 
 if __name__ == '__main__':

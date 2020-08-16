@@ -10,9 +10,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from config import Config
-from training.datasets import DffdDataset
 from training import models
-from training.tools import parse_args, train, validate
+from training.datasets.classifier_dataset import DffdDataset
+from training.tools.train_utils import parse_args, train, validate
 
 torch.backends.cudnn.benchmark = True
 

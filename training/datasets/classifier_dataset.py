@@ -1,6 +1,7 @@
 import os
 from glob import glob
 from pathlib import Path
+from pandas import DataFrame
 
 import cv2
 from torch.utils.data import Dataset
@@ -51,11 +52,20 @@ class DffdDataset(Dataset):
 
 class CelebDFV2Dataset(Dataset):
 
-    def __init__(self, data_root, ):
-        pass
+    def __init__(self, data_root, df: DataFrame, mode, transform, ):
+        self.data_root = data_root
+        self.df = df
+        self.mode = mode
+        self.transform = transform
 
     def __getitem__(self, index):
-        pass
+        video, img_file, label, ori_video, frame = self.df.iloc[index].values
+        img_path = os.path.join(self.data_root, 'crops', video, img_file)
+        image = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = self.transform(image)
+        return image, label
 
     def __len__(self):
-        pass
+        r = self.df.shape[0]
+        return r

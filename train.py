@@ -1,6 +1,7 @@
 import os
 import random
 
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,6 +9,7 @@ from torch import hub
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from sklearn.model_selection import train_test_split
 
 from config import Config
 from training import models
@@ -40,13 +42,21 @@ def get_dffd_dataloader(args):
 
 
 def get_celeba_df_dataloader(args):
+    df = pd.read_csv(args.folds_csv)
+    x_train, x_val = train_test_split(df, test_size=0.1)
     transform = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-    train_data = CelebDFV2Dataset(data_root=args.data_dir, )
+    train_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_train, mode='train', transform=transform)
+    train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
+                              pin_memory=True)
+    val_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_val, mode='validation', transform=transform)
+    val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
+                            pin_memory=True)
+    return train_loader, val_loader
 
 
 def main():
@@ -68,7 +78,10 @@ def main():
     # writer = SummaryWriter('%s/logs/%s' % (args.save_dir, sig))
 
     print("Initializing Data Loader")
-    train_loader, val_loader = get_dffd_dataloader(args)
+    if args.prefix == 'dffd':
+        train_loader, val_loader = get_dffd_dataloader(args)
+    else:
+        train_loader, val_loader = get_celeba_df_dataloader(args)
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
@@ -90,13 +103,12 @@ def main():
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict(),
-            }, os.path.join('weights', '{}_dffd.pt'.format(args.arch)))
-
+            }, os.path.join('weights', '{}_{}.pt'.format(args.arch, args.prefix)))
 
 
 if __name__ == '__main__':
     """
-    python train.py --data-dir /data/xinlin/dffd --arch vgg16 --epoch 10 --batch-size 100
-    python train.py --data-dir /data/xinlin/dffd --arch xception --epoch 10 --batch-size 50
+    python train.py --data-dir /data/xinlin/dffd --arch vgg16 --epoch 10 --batch-size 100 --prefix dffd
+    python train.py --data-dir /data/xinlin/dffd --arch xception --epoch 10 --batch-size 50 --prefix celeb_df
     """
     main()

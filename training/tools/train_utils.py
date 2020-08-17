@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument('--data-dir', metavar='DIR', help='path to dataset')
     parser.add_argument('--arch', metavar='ARCH', default='vgg16', choices=model_names,
                         help='model architecture: ' + ' | '.join(model_names) + ' (default: resnet18)')
+    parser.add_argument('--prefix', type=str, default='dffd')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='batch size')
@@ -33,8 +34,9 @@ def parse_args():
     # parser.add_argument('--save_dir', default='./runs', help='directory for result')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
-    opt = parser.parse_args()
-    return opt
+    parser.add_argument('--folds-csv', type=str, default='folds.csv')
+    args = parser.parse_args()
+    return args
 
 
 def train(train_loader, model, optimizer, criterion, epoch, args):

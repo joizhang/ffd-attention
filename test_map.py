@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 from imageio import imread
-from training.models.xception_map import xception
+from training.models.xception_map import xception_map
 from training.models.vgg_map import vgg16
 from torchvision import transforms
 import torchvision.utils as vutils
@@ -169,7 +169,7 @@ templates = load_template(0)
 
 print("Initializing Networks")
 if opt.network == 'xcp':
-    model = xception(templates, 2, False)
+    model = xception_map(templates, 2, False)
 if opt.network == 'vgg':
     model = vgg16(templates, 2, False)
 

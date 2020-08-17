@@ -13,7 +13,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from training.models.xception_map import xception
+from training.models.xception_map import xception_map
 
 torch.backends.deterministic = True
 
@@ -128,7 +128,7 @@ templates = templates.squeeze(1)
 templates = templates.repeat(16, 1, 1, 1)
 
 print("Initializing Networks")
-model = xception(templates, len(train_data.classes), True)
+model = xception_map(templates, len(train_data.classes), True)
 # checkpoint = torch.load('./90000.pickle')
 # model.load_state_dict(checkpoint['module'])
 optimizer_xcp = optim.Adam(model.parameters(), lr=opt.lr, weight_decay=0.001)

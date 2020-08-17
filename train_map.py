@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from training.models.vgg_map import vgg16
-from training.models.xception_map import xception
+from training.models.xception_map import xception_map
 
 torch.backends.deterministic = True
 
@@ -210,7 +210,7 @@ templates = load_template(1)
 print("Initializing Networks")
 
 if opt.network == 'xcp':
-    model = xception(templates, len(train_data.classes), True)
+    model = xception_map(templates, len(train_data.classes), True)
 if opt.network == 'vgg':
     model = vgg16(templates, len(train_data.classes), True)
 

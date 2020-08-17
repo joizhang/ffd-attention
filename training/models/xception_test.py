@@ -21,13 +21,21 @@ hub.set_dir(CONFIG['TORCH_HOME'])
 
 class XceptionTestCase(unittest.TestCase):
 
+    def test_summary_xception(self):
+        gpu = 0
+        self.assertTrue(torch.cuda.is_available())
+        torch.cuda.set_device(gpu)
+        model = xception(pretrained=True)
+        model = model.cuda()
+        input_size = (3, 299, 299)
+        summary(model, input_size=input_size)
+
     def test_xception(self):
         gpu = 0
         torch.cuda.set_device(gpu)
         model = xception(pretrained=True)
         model = model.cuda()
         input_size = (3, 299, 299)
-        summary(model, input_size=input_size)
         criterion = nn.CrossEntropyLoss().cuda()
 
         valdir = os.path.join(CONFIG['IMAGENET_HOME'], 'val')

@@ -24,7 +24,7 @@ The resize parameter of the validation transform should be 333, and make sure to
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ['xception']
+__all__ = ['SeparableConv2d', 'Block', 'xception']
 
 from training.tools.model_utils import load_pretrained
 
@@ -46,11 +46,12 @@ default_cfgs = {
 
 
 class SeparableConv2d(nn.Module):
+
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, bias=False):
         super(SeparableConv2d, self).__init__()
 
-        self.conv1 = nn.Conv2d(
-            in_channels, in_channels, kernel_size, stride, padding, dilation, groups=in_channels, bias=bias)
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, dilation, groups=in_channels,
+                               bias=bias)
         self.pointwise = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1, 1, bias=bias)
 
     def forward(self, x):
@@ -60,6 +61,7 @@ class SeparableConv2d(nn.Module):
 
 
 class Block(nn.Module):
+
     def __init__(self, in_filters, out_filters, reps, strides=1, start_with_relu=True, grow_first=True):
         super(Block, self).__init__()
 
@@ -144,14 +146,12 @@ class Xception(nn.Module):
         self.block5 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
         self.block6 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
         self.block7 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-
         self.block8 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
         self.block9 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
         self.block10 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
         self.block11 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
 
         self.block12 = Block(728, 1024, 2, 2, start_with_relu=True, grow_first=False)
-
         self.conv3 = SeparableConv2d(1024, 1536, 3, 1, 1)
         self.bn3 = nn.BatchNorm2d(1536)
 
@@ -183,17 +183,17 @@ class Xception(nn.Module):
             self.fc = nn.Identity()
 
     def forward_features(self, x):
+        # Entry flow
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
-
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
+        # Middle flow
         x = self.block4(x)
         x = self.block5(x)
         x = self.block6(x)
@@ -202,12 +202,11 @@ class Xception(nn.Module):
         x = self.block9(x)
         x = self.block10(x)
         x = self.block11(x)
+        # Exit flow
         x = self.block12(x)
-
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
-
         x = self.conv4(x)
         x = self.bn4(x)
         x = self.relu(x)
@@ -220,31 +219,6 @@ class Xception(nn.Module):
             F.dropout(x, self.drop_rate, training=self.training)
         x = self.fc(x)
         return x
-
-
-def init_weights(m):
-    classname = m.__class__.__name__
-    if classname.find('SeparableConv2d') != -1:
-        m.conv1.weight.data.normal_(0.0, 0.01)
-        if m.conv1.bias is not None:
-            m.conv1.bias.data.fill_(0)
-        m.pointwise.weight.data.normal_(0.0, 0.01)
-        if m.pointwise.bias is not None:
-            m.pointwise.bias.data.fill_(0)
-
-    elif classname.find('Conv') != -1 or classname.find('Linear') != -1:
-        m.weight.data.normal_(0.0, 0.01)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.01)
-        m.bias.data.fill_(0)
-    elif classname.find('LSTM') != -1:
-        for i in m._parameters:
-            if i.__class__.__name__.find('weight') != -1:
-                i.data.normal_(0.0, 0.01)
-            elif i.__class__.__name__.find('bias') != -1:
-                i.bias.data.fill_(0)
 
 
 def xception(pretrained=False, num_classes=1000, in_chans=3, **kwargs):

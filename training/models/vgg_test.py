@@ -24,13 +24,18 @@ hub.set_dir(CONFIG['TORCH_HOME'])
 
 class VGGTestCase(unittest.TestCase):
 
-    def test_vgg16(self):
-        gpu = 0
-        torch.cuda.set_device(gpu)
+    def test_summary_vgg16(self):
+        self.assertTrue(torch.cuda.is_available())
+        torch.cuda.set_device(0)
         model = vgg16(pretrained=True)
         model = model.cuda()
-        input_size = (3, 299, 299)
+        input_size = (3, 224, 224)
         summary(model, input_size=input_size)
+
+    def test_vgg16(self):
+        torch.cuda.set_device(0)
+        model = vgg16(pretrained=True)
+        model = model.cuda()
         criterion = nn.CrossEntropyLoss().cuda()
 
         valdir = os.path.join(CONFIG['IMAGENET_HOME'], 'val')
@@ -45,7 +50,7 @@ class VGGTestCase(unittest.TestCase):
             batch_size=10, shuffle=False,
             num_workers=1, pin_memory=True)
 
-        validate(val_loader, model, criterion, input_size)
+        validate(val_loader, model, criterion)
 
 
 if __name__ == '__main__':

@@ -51,7 +51,7 @@ class ProgressMeter(object):
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 
-def validate(val_loader, model, criterion, input_size, print_freq=10):
+def validate(val_loader, model, criterion, print_freq=10):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -62,9 +62,6 @@ def validate(val_loader, model, criterion, input_size, print_freq=10):
     model.eval()
 
     with torch.no_grad():
-        # warmup, reduce variability of first batch time, especially for comparing torchscript vs non
-        # input = torch.randn((50,) + input_size).cuda()
-        # model(input)
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
             images = images.cuda()

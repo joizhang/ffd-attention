@@ -1,58 +1,33 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from training.models.xception import SeparableConv2d, Block, Xception
+
+from training.models.xception import default_cfgs, SeparableConv2d, Block, Xception
+from training.tools.model_utils import load_pretrained
 
 __all__ = ['xception_map']
 
 
 class XceptionMap(Xception):
 
-    def __init__(self, templates, num_classes=1000):
+    def __init__(self, templates, num_classes=1000, in_chans=3, **kwargs):
         """ Constructor
         Args:
             num_classes: number of classes
         """
-        super(XceptionMap, self).__init__()
-        self.num_classes = num_classes
+        super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans, **kwargs)
 
-        self.conv1 = nn.Conv2d(3, 32, 3, 2, 0, bias=False)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.relu = nn.ReLU(inplace=True)
-
-        self.conv2 = nn.Conv2d(32, 64, 3, bias=False)
-        self.bn2 = nn.BatchNorm2d(64)
-
-        self.block1 = Block(64, 128, 2, 2, start_with_relu=False, grow_first=True)
-        self.block2 = Block(128, 256, 2, 2, start_with_relu=True, grow_first=True)
-        self.block3 = Block(256, 728, 2, 2, start_with_relu=True, grow_first=True)
-        self.block4 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block5 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block6 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block7 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block8 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block9 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block10 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block11 = Block(728, 728, 3, 1, start_with_relu=True, grow_first=True)
-        self.block12 = Block(728, 1024, 2, 2, start_with_relu=True, grow_first=False)
-
-        self.conv3 = SeparableConv2d(1024, 1536, 3, 1, 1)
-        self.bn3 = nn.BatchNorm2d(1536)
-
-        self.conv4 = SeparableConv2d(1536, 2048, 3, 1, 1)
-        self.bn4 = nn.BatchNorm2d(2048)
-
-        # map related ops
         self.templates = templates
-        self.sigmoid = nn.Sigmoid().cuda()
+        # Reg Map
         self.map = SeparableConv2d(728, 1, 3, stride=1, padding=1, bias=False)
+        self.sigmoid = nn.Sigmoid()
+        # MAM Map
         self.bnmap = nn.BatchNorm2d(728)
         self.convmap = SeparableConv2d(728, 10, 3, 1, 1)
         self.convmap2 = SeparableConv2d(10, 1, 3, 1, 1)
         self.linearmap = nn.Linear(3610, 10)
-        self.softmax = torch.nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=1)
         self.avgpool2d = nn.AvgPool2d(19, stride=1)
-
         self.map_conv1 = Block(728, 364, 2, 2, start_with_relu=True, grow_first=False)
         self.map_linear = nn.Linear(364, 10)
 
@@ -92,87 +67,51 @@ class XceptionMap(Xception):
         x = x * mask
         return x, mask, vec
 
-    def features(self, input):
-        x = self.conv1(input)
+    def forward_features(self, x):
+        # Entry flow
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
-
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
+        # Middle flow
         x = self.block4(x)
         x = self.block5(x)
         x = self.block6(x)
         x = self.block7(x)
-        # x, mask, vec = self.mask_template(x)
         x, mask, vec = self.mask_reg(x)
+        # x, mask, vec = self.mask_template(x)
         # x, mask, vec = self.mask_pca_template(x)
         x = self.block8(x)
         x = self.block9(x)
         x = self.block10(x)
         x = self.block11(x)
+        # Exit flow
         x = self.block12(x)
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
-
         x = self.conv4(x)
         x = self.bn4(x)
         return x, mask, vec
-        # return x, 0, 0
 
-    def logits(self, features):
-        x = self.relu(features)
-        x = F.adaptive_avg_pool2d(x, (1, 1))
-        x = x.view(x.size(0), -1)
-        x = self.last_linear(x)
-        return x
-
-    def forward(self, input):
-        x, mask, vec = self.features(input)
-        x = self.logits(x)
+    def forward(self, x):
+        x, mask, vec = self.forward_features(x)
+        x = self.global_pool(x).flatten(1)
+        if self.drop_rate:
+            F.dropout(x, self.drop_rate, training=self.training)
+        x = self.fc(x)
         return x, mask, vec
 
 
-def init_weights(m):
-    classname = m.__class__.__name__
-    if classname.find('SeparableConv2d') != -1:
-        m.conv1.weight.data.normal_(0.0, 0.01)
-        if m.conv1.bias is not None:
-            m.conv1.bias.data.fill_(0)
-        m.pointwise.weight.data.normal_(0.0, 0.01)
-        if m.pointwise.bias is not None:
-            m.pointwise.bias.data.fill_(0)
-    elif classname.find('Conv') != -1 or classname.find('Linear') != -1:
-        m.weight.data.normal_(0.0, 0.01)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.01)
-        m.bias.data.fill_(0)
-    elif classname.find('LSTM') != -1:
-        for i in m._parameters:
-            if i.__class__.__name__.find('weight') != -1:
-                i.data.normal_(0.0, 0.01)
-            elif i.__class__.__name__.find('bias') != -1:
-                i.bias.data.fill_(0)
-
-
-def xception_map(templates=0, num_classes=2, load_pretrain=True):
-    model = XceptionMap(templates, num_classes=num_classes)
-    if load_pretrain:
-        state_dict = torch.load('./models/xception-b5690688.pth')
-        for name, weights in state_dict.items():
-            if 'pointwise' in name:
-                state_dict[name] = weights.unsqueeze(-1).unsqueeze(-1)
-        del state_dict['fc.weight']
-        del state_dict['fc.bias']
-        model.load_state_dict(state_dict, False)
-    else:
-        model.apply(init_weights)
-    model.last_linear = nn.Linear(2048, num_classes)
+def xception_map(pretrained=False, num_classes=1000, in_chans=3, templates=0, **kwargs):
+    default_cfg = default_cfgs['xception']
+    model = XceptionMap(templates, num_classes=num_classes, in_chans=in_chans, **kwargs)
+    model.default_cfg = default_cfg
+    if pretrained:
+        load_pretrained(model, default_cfg, num_classes, in_chans, strict=False)
     return model

@@ -16,21 +16,22 @@ from config import Config
 torch.backends.cudnn.benchmark = True
 
 CONFIG = Config()
+
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+os.environ["CUDA_VISIBLE_DEVICES"] = CONFIG['CUDA_VISIBLE_DEVICES']
 
 
 class XceptionTestCase(unittest.TestCase):
 
     def test_summary_xception(self):
         self.assertTrue(torch.cuda.is_available())
-        torch.cuda.set_device(0)
         model = xception(pretrained=True)
         model = model.cuda()
         input_size = (3, 299, 299)
         summary(model, input_size=input_size)
 
     def test_xception(self):
-        torch.cuda.set_device(0)
         model = xception(pretrained=True)
         model = model.cuda()
         criterion = nn.CrossEntropyLoss().cuda()

@@ -19,21 +19,22 @@ from training.tools.model_utils import validate
 torch.backends.cudnn.benchmark = True
 
 CONFIG = Config()
+
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+os.environ["CUDA_VISIBLE_DEVICES"] = CONFIG['CUDA_VISIBLE_DEVICES']
 
 
 class VGGTestCase(unittest.TestCase):
 
     def test_summary_vgg16(self):
         self.assertTrue(torch.cuda.is_available())
-        torch.cuda.set_device(0)
         model = vgg16(pretrained=True)
         model = model.cuda()
         input_size = (3, 224, 224)
         summary(model, input_size=input_size)
 
     def test_vgg16(self):
-        torch.cuda.set_device(0)
         model = vgg16(pretrained=True)
         model = model.cuda()
         criterion = nn.CrossEntropyLoss().cuda()

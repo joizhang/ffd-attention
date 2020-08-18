@@ -16,7 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', metavar='DIR', help='path to dataset')
     parser.add_argument('--arch', metavar='ARCH', default='vgg16', choices=model_names,
-                        help='model architecture: ' + ' | '.join(model_names) + ' (default: resnet18)')
+                        help='model architecture: ' + ' | '.join(model_names) + ' (default: vgg16)')
     parser.add_argument('--prefix', type=str, default='dffd')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')

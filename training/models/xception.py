@@ -24,7 +24,7 @@ The resize parameter of the validation transform should be 333, and make sure to
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ['SeparableConv2d', 'Block', 'xception']
+__all__ = ['SeparableConv2d', 'Block', 'Xception', 'xception']
 
 from training.tools.model_utils import load_pretrained
 

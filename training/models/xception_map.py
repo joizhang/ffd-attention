@@ -1,16 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from training.models.xception import SeparableConv2d, Block
+from training.models.xception import SeparableConv2d, Block, Xception
 
 __all__ = ['xception_map']
 
 
-class XceptionMap(nn.Module):
-    """
-    Xception optimized for the ImageNet dataset, as specified in
-    https://arxiv.org/pdf/1610.02357.pdf
-    """
+class XceptionMap(Xception):
 
     def __init__(self, templates, num_classes=1000):
         """ Constructor

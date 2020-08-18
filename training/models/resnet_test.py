@@ -16,8 +16,6 @@ from training.tools.model_utils import validate
 
 torch.backends.cudnn.benchmark = True
 
-torch.backends.cudnn.benchmark = True
-
 CONFIG = Config()
 
 hub.set_dir(CONFIG['TORCH_HOME'])

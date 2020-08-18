@@ -17,19 +17,24 @@ from training.tools.model_utils import validate
 torch.backends.cudnn.benchmark = True
 
 CONFIG = Config()
+
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+os.environ["CUDA_VISIBLE_DEVICES"] = CONFIG['CUDA_VISIBLE_DEVICES']
 
 
 class EfficientNetTestCase(unittest.TestCase):
 
-    def test_efficientnet(self):
-        gpu = 0
-        torch.cuda.set_device(gpu)
+    def test_summary_efficientnet(self):
+        self.assertTrue(torch.cuda.is_available())
         model = efficientnet_b0(pretrained=True, num_classes=1000, in_chans=3)
-        # model = timm.create_model('efficientnet_b0', pretrained=True)
         model = model.cuda()
         input_size = (3, 224, 224)
         summary(model, input_size=input_size)
+
+    def test_efficientnet(self):
+        model = efficientnet_b0(pretrained=True, num_classes=1000, in_chans=3)
+        model = model.cuda()
         criterion = nn.CrossEntropyLoss().cuda()
 
         valdir = os.path.join(CONFIG['IMAGENET_HOME'], 'val')
@@ -44,7 +49,7 @@ class EfficientNetTestCase(unittest.TestCase):
             batch_size=50, shuffle=False,
             num_workers=1, pin_memory=False)
 
-        validate(val_loader, model, criterion, input_size)
+        validate(val_loader, model, criterion)
 
 
 if __name__ == '__main__':

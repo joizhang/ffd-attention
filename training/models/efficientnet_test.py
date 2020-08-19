@@ -3,7 +3,7 @@ import unittest
 
 import torch
 from PIL import Image
-from timm.models.efficientnet import efficientnet_b0
+from timm.models.efficientnet import efficientnet_b3
 from torch import hub
 from torch import nn
 from torch.backends import cudnn
@@ -27,13 +27,13 @@ class EfficientNetTestCase(unittest.TestCase):
 
     def test_summary_efficientnet(self):
         self.assertTrue(torch.cuda.is_available())
-        model = efficientnet_b0(pretrained=True, num_classes=1000, in_chans=3)
+        model = efficientnet_b3(pretrained=True, num_classes=1000, in_chans=3)
         model = model.cuda()
         input_size = (3, 224, 224)
         summary(model, input_size=input_size)
 
     def test_efficientnet(self):
-        model = efficientnet_b0(pretrained=True, num_classes=1000, in_chans=3)
+        model = efficientnet_b3(pretrained=True, num_classes=1000, in_chans=3)
         model = model.cuda()
         criterion = nn.CrossEntropyLoss().cuda()
 

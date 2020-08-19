@@ -82,6 +82,7 @@ class DATA(object):
         img_fake2 = self.load_img(image_path_fake2)
         image_path_fake3 = '{:s}images/{:0>5d}-3.jpg'.format(self.data_root, index)
         img_fake3 = self.load_img(image_path_fake3)
+
         image_path_mask0 = '{:s}Mask/{:0>5d}-0.jpg'.format(self.data_root, index)
         img_mask0 = self.load_mask(image_path_mask0)
         image_path_mask1 = '{:s}Mask/{:0>5d}-1.jpg'.format(self.data_root, index)

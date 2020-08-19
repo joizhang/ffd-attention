@@ -5,7 +5,6 @@ import os
 import random
 import torch
 
-print(torch.cuda.is_available())
 import torch.nn as nn
 import torch.optim as optim
 from imageio import imread
@@ -14,6 +13,7 @@ from tensorboardX import SummaryWriter
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
+print(torch.cuda.is_available())
 torch.backends.deterministic = True
 
 #################################################################################################################

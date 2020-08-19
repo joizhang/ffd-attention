@@ -4,6 +4,8 @@ from pathlib import Path
 from pandas import DataFrame
 
 import cv2
+import torch
+import numpy as np
 from torch.utils.data import Dataset
 
 """
@@ -12,39 +14,61 @@ Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
 Attributes manipulation: FaceAPP, StarGAN
 Entire face synthesis: PGGAN, StyleGAN
 """
-DFFD = {'ffhq': 'Real', 'celeba': 'Real',
-        'faceapp': 'Fake', 'stargan': 'Fake',
-        'pggan_v1': 'Fake_Entire', 'pggan_v2': 'Fake_Entire',
-        'stylegan_celeba': 'Fake_Entire', 'stylegan_ffhq': 'Fake_Entire'}
+CLASSES = {'Real': 0, 'Fake_Partial': 1, 'Fake_Entire': 2}
+
+DFFD = {
+    'ffhq': 'Real',
+    # 'celeba': 'Real',
+    'faceapp': 'Fake_Partial',
+    # 'stargan': 'Fake_Partial',
+    # 'pggan_v1': 'Fake_Entire',
+    # 'pggan_v2': 'Fake_Entire',
+    # 'stylegan_celeba': 'Fake_Entire',
+    'stylegan_ffhq': 'Fake_Entire'
+}
 
 
 class DffdDataset(Dataset):
 
-    def __init__(self, data_root, mode, transform, classes=None):
-        """
-        Args:
-            classes (dict): {'Real': 0, 'Fake_Entire': 1, 'Fake_Partial': 2}
-        """
+    def __init__(self, data_root, mode, transform=None, mask_transform=None):
         self.data_root = data_root
         self.mode = mode
         self.transform = transform
-        self.classes = classes
+        self.mask_transform = mask_transform
         self.data = []
-        for mode_path in glob(os.path.join(data_root, "*/{}".format(mode))):
-            if DFFD[Path(mode_path).parent.name] in self.classes:
+        self._prepare_data()
+
+    def _prepare_data(self):
+        for mode_path in glob(os.path.join(self.data_root, "*/{}".format(self.mode))):
+            data_type = Path(mode_path).parent.name
+            if data_type in DFFD and DFFD[data_type] in CLASSES:
                 print(mode_path)
-                label = self.classes[DFFD[Path(mode_path).parent.name]]
-                file_names = os.listdir(mode_path)
-                for file_name in file_names:
-                    self.data.append((os.path.join(mode_path, file_name), label))
+                label = CLASSES[DFFD[Path(mode_path).parent.name]]
+                for file_name in os.listdir(mode_path):
+                    image_path = os.path.join(mode_path, file_name)
+                    mask_path = os.path.join("{}_mask".format(mode_path), file_name)
+                    self.data.append((image_path, label, mask_path))
 
     def __getitem__(self, index):
-        image_path, label = self.data[index]
-        # img = self.load_img(image_path)
+        image_path, label, mask_path = self.data[index]
+        # image
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = self.transform(image)
-        return image, label
+        # mask
+        mask = None
+        if label == 0:
+            mask = np.zeros((image.size(1), image.size(2)), dtype=np.uint8)
+        elif label == 1:
+            if os.path.exists(mask_path):
+                mask = cv2.imread(mask_path, cv2.IMREAD_COLOR)
+                mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
+            else:
+                mask = np.zeros(image.numpy().transpose(1, 2, 0).shape)
+        elif label == 2:
+            mask = np.ones((image.size(1), image.size(2)), dtype=np.uint8) * 255.
+        mask = self.mask_transform(mask)
+        return {'images': image, 'labels': label, 'masks': mask}
 
     def __len__(self):
         return len(self.data)

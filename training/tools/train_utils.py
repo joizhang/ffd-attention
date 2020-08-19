@@ -35,11 +35,13 @@ def parse_args():
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
     parser.add_argument('--folds-csv', type=str, default='folds.csv')
+    parser.add_argument('--localization', dest='localization', action='store_true',
+                        help='Manipulation Localization')
     args = parser.parse_args()
     return args
 
 
-def train(train_loader, model, optimizer, criterion, epoch, args):
+def train(train_loader, model, optimizer, loss_functions, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -48,14 +50,14 @@ def train(train_loader, model, optimizer, criterion, epoch, args):
     model.train()
 
     end = time.time()
-    for batch_idx, (images, target) in enumerate(train_loader):
-        images, target = images.cuda(), target.cuda()
+    for batch_idx, sample in enumerate(train_loader):
+        images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
         # compute output
-        output = model(images)
-        loss = criterion(output, target)
+        outputs = model(images)
+        loss = loss_functions['classifier_loss'](outputs, labels)
 
         # measure accuracy and record loss
-        acc1, = accuracy(output, target)
+        acc1, = accuracy(outputs, labels)
         losses.update(loss.item(), images.size(0))
         top1.update(acc1[0], images.size(0))
 
@@ -71,7 +73,7 @@ def train(train_loader, model, optimizer, criterion, epoch, args):
             progress.display(batch_idx)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, loss_functions, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(val_loader), [batch_time, top1], prefix='Test: ')
@@ -80,23 +82,23 @@ def validate(val_loader, model, criterion, args):
 
     with torch.no_grad():
         end = time.time()
-        for i, (images, target) in enumerate(val_loader):
-            images, target = images.cuda(), target.cuda()
+        for batch_idx, sample in enumerate(val_loader):
+            images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
 
             # compute output
             output = model(images)
-            loss = criterion(output, target)
+            loss = loss_functions['classifier_loss'](output, labels)
 
             # measure accuracy and record loss
-            acc1, = accuracy(output, target)
+            acc1, = accuracy(output, labels)
             top1.update(acc1[0], images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
-                progress.display(i)
+            if batch_idx % args.print_freq == 0:
+                progress.display(batch_idx)
 
     return top1.avg
 

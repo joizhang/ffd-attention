@@ -52,9 +52,16 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
     end = time.time()
     for batch_idx, sample in enumerate(train_loader):
         images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
+
         # compute output
         outputs = model(images)
-        loss = loss_functions['classifier_loss'](outputs, labels)
+        if isinstance(outputs, tuple):
+            output, mask_output, vec = outputs
+            loss_classifier = loss_functions['classifier_loss'](output, labels)
+            loss_map = loss_functions['map_loss'](mask_output, masks)
+            loss = loss_classifier + loss_map
+        else:
+            loss = loss_functions['classifier_loss'](outputs, labels)
 
         # measure accuracy and record loss
         acc1, = accuracy(outputs, labels)
@@ -86,8 +93,14 @@ def validate(val_loader, model, loss_functions, args):
             images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
 
             # compute output
-            output = model(images)
-            loss = loss_functions['classifier_loss'](output, labels)
+            outputs = model(images)
+            if isinstance(outputs, tuple):
+                output, mask_output, vec = outputs
+            #     loss_classifier = loss_functions['classifier_loss'](output, labels)
+            #     loss_map = loss_functions['map_loss'](mask_output, masks)
+            #     loss = loss_classifier + loss_map
+            # else:
+            #     loss = loss_functions['classifier_loss'](outputs, labels)
 
             # measure accuracy and record loss
             acc1, = accuracy(output, labels)

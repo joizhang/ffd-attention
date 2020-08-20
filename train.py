@@ -89,7 +89,7 @@ def main():
         train_loader, val_loader = get_dffd_dataloader(model, args)
     else:
         train_loader, val_loader = get_celeba_df_dataloader(model, args)
-    print(next(iter(train_loader)))
+    # print(next(iter(train_loader)))
 
     if args.evaluate:
         validate(val_loader, model, loss_functions, args)

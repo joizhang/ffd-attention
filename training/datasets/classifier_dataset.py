@@ -66,7 +66,7 @@ class DffdDataset(Dataset):
             else:
                 mask = np.zeros(image.numpy().transpose(1, 2, 0).shape)
         elif label == 2:
-            mask = np.ones((image.size(1), image.size(2)), dtype=np.uint8) * 255.
+            mask = np.ones((image.size(1), image.size(2)), dtype=np.uint8) * 255
         mask = self.mask_transform(mask)
         return {'images': image, 'labels': label, 'masks': mask}
 

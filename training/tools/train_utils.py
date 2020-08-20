@@ -96,6 +96,8 @@ def validate(val_loader, model, loss_functions, args):
             outputs = model(images)
             if isinstance(outputs, tuple):
                 output, mask_output, vec = outputs
+            else:
+                output = outputs
             #     loss_classifier = loss_functions['classifier_loss'](output, labels)
             #     loss_map = loss_functions['map_loss'](mask_output, masks)
             #     loss = loss_classifier + loss_map

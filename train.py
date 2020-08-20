@@ -39,7 +39,7 @@ def get_dffd_dataloader(model, args):
     train_data = DffdDataset(args.data_dir, 'train', transform=transform, mask_transform=mask_transform)
     train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
                               pin_memory=True)
-    val_data = DffdDataset(args.data_dir, 'validation', transform=transform)
+    val_data = DffdDataset(args.data_dir, 'validation', transform=transform, mask_transform=mask_transform)
     val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
                             pin_memory=True)
     return train_loader, val_loader
@@ -89,7 +89,7 @@ def main():
         train_loader, val_loader = get_dffd_dataloader(model, args)
     else:
         train_loader, val_loader = get_celeba_df_dataloader(model, args)
-    # print(next(iter(train_loader)))
+    # print(next(iter(val_loader)))
 
     if args.evaluate:
         validate(val_loader, model, loss_functions, args)

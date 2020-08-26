@@ -56,15 +56,16 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
         # compute output
         outputs = model(images)
         if isinstance(outputs, tuple):
-            output, mask_output, vec = outputs
-            loss_classifier = loss_functions['classifier_loss'](output, labels)
+            labels_pred, mask_output, vec = outputs
+            loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
             loss_map = loss_functions['map_loss'](mask_output, masks)
             loss = loss_classifier + loss_map
         else:
-            loss = loss_functions['classifier_loss'](outputs, labels)
+            labels_pred = outputs
+            loss = loss_functions['classifier_loss'](labels_pred, labels)
 
         # measure accuracy and record loss
-        acc1, = accuracy(outputs, labels)
+        acc1, = accuracy(labels_pred, labels)
         losses.update(loss.item(), images.size(0))
         top1.update(acc1[0], images.size(0))
 
@@ -95,9 +96,9 @@ def validate(val_loader, model, loss_functions, args):
             # compute output
             outputs = model(images)
             if isinstance(outputs, tuple):
-                output, mask_output, vec = outputs
+                labels_pred, mask_output, vec = outputs
             else:
-                output = outputs
+                labels_pred = outputs
             #     loss_classifier = loss_functions['classifier_loss'](output, labels)
             #     loss_map = loss_functions['map_loss'](mask_output, masks)
             #     loss = loss_classifier + loss_map
@@ -105,7 +106,7 @@ def validate(val_loader, model, loss_functions, args):
             #     loss = loss_functions['classifier_loss'](outputs, labels)
 
             # measure accuracy and record loss
-            acc1, = accuracy(output, labels)
+            acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
 
             # measure elapsed time

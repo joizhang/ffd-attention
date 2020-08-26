@@ -37,11 +37,11 @@ def get_dffd_dataloader(model, args):
         transforms.ToTensor()
     ])
     train_data = DffdDataset(args.data_dir, 'train', transform=transform, mask_transform=mask_transform)
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=False, num_workers=1, pin_memory=True,
-                              drop_last=False)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                              drop_last=True)
     val_data = DffdDataset(args.data_dir, 'validation', transform=transform, mask_transform=mask_transform)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=1, pin_memory=True,
-                            drop_last=False)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                            drop_last=True)
     return train_loader, val_loader
 
 
@@ -55,11 +55,11 @@ def get_celeba_df_dataloader(model, args):
         transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
     ])
     train_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_train, mode='train', transform=transform)
-    train_loader = DataLoader(train_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
-                              pin_memory=True)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                              drop_last=True)
     val_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_val, mode='validation', transform=transform)
-    val_loader = DataLoader(val_data, num_workers=1, batch_size=args.batch_size, shuffle=True, drop_last=True,
-                            pin_memory=True)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                            drop_last=True)
     return train_loader, val_loader
 
 

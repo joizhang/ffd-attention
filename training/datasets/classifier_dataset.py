@@ -23,7 +23,7 @@ DFFD = {
     # 'stargan': 'Fake_Partial',
     # 'pggan_v1': 'Fake_Entire',
     # 'pggan_v2': 'Fake_Entire',
-    'stylegan_celeba': 'Fake_Entire',
+    # 'stylegan_celeba': 'Fake_Entire',
     'stylegan_ffhq': 'Fake_Entire'
 }
 

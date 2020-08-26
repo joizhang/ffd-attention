@@ -123,7 +123,7 @@ def main():
         model.load_state_dict(checkpoint['state_dict'])
 
         print("Initializing Data Loader")
-        test_loader = get_dffd_dataloader(model, args)
+        test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
 
         print("Start Testing")
         test(test_loader, model, args)

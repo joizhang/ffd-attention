@@ -39,15 +39,17 @@ class DffdDataset(Dataset):
         self._prepare_data()
 
     def _prepare_data(self):
+        mode_paths = []
         for mode_path in glob(os.path.join(self.data_root, "*/{}".format(self.mode))):
             data_type = Path(mode_path).parent.name
             if data_type in DFFD and DFFD[data_type] in CLASSES:
-                print(mode_path)
+                mode_paths.append(mode_path)
                 label = CLASSES[DFFD[Path(mode_path).parent.name]]
                 for file_name in os.listdir(mode_path):
                     image_path = os.path.join(mode_path, file_name)
                     mask_path = os.path.join("{}_mask".format(mode_path), file_name)
                     self.data.append((image_path, label, mask_path))
+        print(self.mode, ":", mode_paths)
 
     def __getitem__(self, index):
         image_path, label, mask_path = self.data[index]

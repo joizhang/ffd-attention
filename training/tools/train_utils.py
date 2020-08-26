@@ -99,11 +99,6 @@ def validate(val_loader, model, loss_functions, args):
                 labels_pred, mask_output, vec = outputs
             else:
                 labels_pred = outputs
-            #     loss_classifier = loss_functions['classifier_loss'](output, labels)
-            #     loss_map = loss_functions['map_loss'](mask_output, masks)
-            #     loss = loss_classifier + loss_map
-            # else:
-            #     loss = loss_functions['classifier_loss'](outputs, labels)
 
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)

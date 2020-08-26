@@ -78,29 +78,33 @@ def test(test_loader, model, args):
 
     with torch.no_grad():
         end = time.time()
-        for i, (images, target) in enumerate(test_loader):
-            images, target = images.cuda(), target.cuda()
-            y_true.extend(target.tolist())
+        for batch_idx, sample in enumerate(test_loader):
+            images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
+            y_true.extend(labels.tolist())
 
             # compute output
-            output = model(images)
+            outputs = model(images)
+            if isinstance(outputs, tuple):
+                labels_pred, mask_output, vec = outputs
+            else:
+                labels_pred = outputs
 
-            pred = torch.argmax(output, dim=1)
+            pred = torch.argmax(labels_pred, dim=1)
             y_pred.extend(pred.tolist())
-            score = torch.nn.functional.softmax(output, dim=1)
+            score = torch.nn.functional.softmax(labels_pred, dim=1)
             score = score[:, 1]
             y_score.extend(score.tolist())
 
             # measure accuracy and record loss
-            acc1, = accuracy(output, target)
+            acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
-                progress.display(i)
+            if batch_idx % args.print_freq == 0:
+                progress.display(batch_idx)
     pickle.dump([y_true, y_pred, y_score], open(PICKLE_FILE.format(args.arch), "wb"))
     return top1.avg
 

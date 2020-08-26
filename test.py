@@ -121,16 +121,21 @@ def main():
         model.load_state_dict(checkpoint['state_dict'])
 
         print("Initializing Data Loader")
-        classes = {'Real': 0, 'Fake': 1}
         transform = transforms.Compose([
             transforms.ToPILImage(),
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-        test_data = DffdDataset(data_root=args.data_dir, mode='test', transform=transform, classes=classes)
-        test_loader = DataLoader(test_data, num_workers=1, batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                 pin_memory=True)
+        mask_transform = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Resize((19, 19)),
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor()
+        ])
+        test_data = DffdDataset(args.data_dir, 'test', transform=transform, mask_transform=mask_transform)
+        test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=1, pin_memory=True,
+                                 drop_last=False)
         test(test_loader, model, args)
     else:
         show_metrics(args)

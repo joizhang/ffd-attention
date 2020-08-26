@@ -1,12 +1,14 @@
 import os
 from glob import glob
 from pathlib import Path
-from pandas import DataFrame
 
 import cv2
-import torch
 import numpy as np
-from torch.utils.data import Dataset
+import pandas as pd
+from pandas import DataFrame
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
 
 """
 Real face images: FFHQ, CelebA
@@ -14,17 +16,24 @@ Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
 Attributes manipulation: FaceAPP, StarGAN
 Entire face synthesis: PGGAN, StyleGAN
 """
-CLASSES = {'Real': 0, 'Fake_Partial': 1, 'Fake_Entire': 2}
+CLASSES = {
+    'Real': 0,
+    'Expression_Swap': 1,
+    'Identity_Swap': 2,
+    'Attribute_Manipulation': 3,
+    'Entire_Face_Synthesis': 4
+}
 
 DFFD = {
     'ffhq': 'Real',
     # 'celeba': 'Real',
-    'faceapp': 'Fake_Partial',
-    # 'stargan': 'Fake_Partial',
-    # 'pggan_v1': 'Fake_Entire',
-    # 'pggan_v2': 'Fake_Entire',
-    # 'stylegan_celeba': 'Fake_Entire',
-    'stylegan_ffhq': 'Fake_Entire'
+
+    'faceapp': 'Attribute_Manipulation',
+    # 'stargan': 'Attribute_Manipulation',
+    # 'pggan_v1': 'Entire_Face_Synthesis',
+    # 'pggan_v2': 'Entire_Face_Synthesis',
+    # 'stylegan_celeba': 'Entire_Face_Synthesis',
+    'stylegan_ffhq': 'Entire_Face_Synthesis'
 }
 
 
@@ -61,14 +70,16 @@ class DffdDataset(Dataset):
         mask = None
         if label == 0:
             mask = np.zeros((image.size(1), image.size(2)), dtype=np.uint8)
-        elif label == 1:
+        elif label == 1 or label == 2 or label == 3:
             if os.path.exists(mask_path):
                 mask = cv2.imread(mask_path, cv2.IMREAD_COLOR)
                 mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
             else:
                 mask = np.zeros(image.numpy().transpose(1, 2, 0).shape)
-        elif label == 2:
+            label = 1
+        elif label == 4:
             mask = np.ones((image.size(1), image.size(2)), dtype=np.uint8) * 255
+            label = 1
         mask = self.mask_transform(mask)
         return {'images': image, 'labels': label, 'masks': mask}
 
@@ -95,3 +106,41 @@ class CelebDFV2Dataset(Dataset):
     def __len__(self):
         r = self.df.shape[0]
         return r
+
+
+def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
+    input_size = model.default_cfg['input_size']
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((input_size[1], input_size[2])),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
+    ])
+    mask_transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((19, 19)),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.ToTensor()
+    ])
+    dataset = DffdDataset(args.data_dir, mode, transform=transform, mask_transform=mask_transform)
+    dataloader = DataLoader(dataset, args.batch_size, shuffle, num_workers=num_workers, pin_memory=True,
+                            drop_last=False)
+    return dataloader
+
+
+def get_celeba_df_dataloader(model, args):
+    df = pd.read_csv(args.folds_csv)
+    x_train, x_val = train_test_split(df, test_size=0.1)
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
+    ])
+    train_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_train, mode='train', transform=transform)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                              drop_last=True)
+    val_data = CelebDFV2Dataset(data_root=args.data_dir, df=x_val, mode='validation', transform=transform)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True,
+                            drop_last=True)
+    return train_loader, val_loader

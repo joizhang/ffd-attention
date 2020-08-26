@@ -6,37 +6,15 @@ import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, auc, roc_curve
 from torch.backends import cudnn
-from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from training import models
-from training.datasets.classifier_dataset import DffdDataset
+from training.datasets.classifier_dataset import get_dffd_dataloader
 from training.tools.model_utils import AverageMeter, ProgressMeter, accuracy
 from training.tools.train_utils import parse_args
 
 torch.backends.cudnn.benchmark = True
 
 PICKLE_FILE = "plot/{}.pickle"
-
-
-def get_dffd_dataloader(model, args):
-    input_size = model.default_cfg['input_size']
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((input_size[1], input_size[2])),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
-    ])
-    mask_transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((19, 19)),
-        transforms.Grayscale(num_output_channels=1),
-        transforms.ToTensor()
-    ])
-    test_data = DffdDataset(args.data_dir, 'test', transform=transform, mask_transform=mask_transform)
-    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=1, pin_memory=True,
-                             drop_last=False)
-    return test_loader
 
 
 def test(test_loader, model, args):

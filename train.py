@@ -30,7 +30,7 @@ def main():
     # os.makedirs('%s/modules/%s' % (args.save_dir, sig), exist_ok=True)
 
     print("Initializing Networks")
-    model = models.__dict__[args.arch](pretrained=True, attn_type='butd')
+    model = models.__dict__[args.arch](pretrained=True)
     model.cuda()
     optimizer = optim.Adam(model.parameters())
     loss_functions = {
@@ -72,7 +72,8 @@ def main():
 
 if __name__ == '__main__':
     """
-    python train.py --data-dir /data/xinlin/dffd --arch vgg16 --epoch 10 --batch-size 100 --prefix dffd
-    python train.py --data-dir /data/xinlin/dffd --arch xception --epoch 10 --batch-size 50 --prefix celeb_df
+    python train.py --data-dir /data/xinlin/dffd --arch xception --prefix dffd --epoch 5 --batch-size 20 --lr 0.0002 --gpu 1 --print-freq 50
+    python train.py --data-dir /data/xinlin/dffd --arch xception_reg --prefix dffd --epoch 5 --batch-size 20 --lr 0.0002 --gpu 1 --print-freq 50
+    python train.py --data-dir /data/xinlin/dffd --arch xception_butd --prefix dffd --epoch 5 --batch-size 20 --lr 0.0002 --gpu 1 --print-freq 50
     """
     main()

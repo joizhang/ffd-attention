@@ -97,10 +97,18 @@ class XceptionMap(Xception):
         return x, mask, vec
 
 
-def xception_map(pretrained=False, num_classes=1000, in_chans=3, attn_type='reg', **kwargs):
+def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **kwargs):
     default_cfg = default_cfgs['xception']
     model = XceptionMap(num_classes=num_classes, in_chans=in_chans, attn_type=attn_type, **kwargs)
     model.default_cfg = default_cfg
     if pretrained:
         load_pretrained(model, default_cfg, num_classes, in_chans, strict=False)
     return model
+
+
+def xception_reg(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
+    return _xception(pretrained, num_classes, in_chans, 'reg', **kwargs)
+
+
+def xception_butd(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
+    return _xception(pretrained, num_classes, in_chans, 'butd', **kwargs)

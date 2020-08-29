@@ -30,7 +30,7 @@ def main():
     # os.makedirs('%s/modules/%s' % (args.save_dir, sig), exist_ok=True)
 
     print("Initializing Networks")
-    model = models.__dict__[args.arch](pretrained=True)
+    model = models.__dict__[args.arch](pretrained=True, attn_type='butd')
     model.cuda()
     optimizer = optim.Adam(model.parameters())
     loss_functions = {

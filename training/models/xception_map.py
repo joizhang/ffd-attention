@@ -5,7 +5,7 @@ from training.models.xception import default_cfgs, SeparableConv2d, Xception
 from training.tools.model_utils import load_pretrained
 from training.models import Bottleneck
 
-__all__ = ['xception_map']
+__all__ = ['xception_reg', 'xception_butd']
 
 
 class XceptionMap(Xception):

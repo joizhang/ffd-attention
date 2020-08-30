@@ -8,52 +8,86 @@ from training.models import Bottleneck
 __all__ = ['xception_reg', 'xception_butd']
 
 
-class XceptionMap(Xception):
+class RegAttention(nn.Module):
 
-    def __init__(self, num_classes, in_chans, attn_type, **kwargs):
-        """ Constructor
-        Args:
-            attn_type (str): Include reg, butd(bottom-up top-down), map,
-            num_classes (int): number of classes
-        """
-        super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans, **kwargs)
-
-        self.attn_type = attn_type
+    def __init__(self, in_channels=728, out_channels=1):
+        super(RegAttention, self).__init__()
         # Reg Map
-        self.map = SeparableConv2d(728, 1, 3, stride=1, padding=1, bias=False)
+        self.map = SeparableConv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.sigmoid = nn.Sigmoid()
-        # Bottom up top down
-        in_channels, out_channels = 728, 728
-        self.maxpool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.softmax1_blocks = nn.Sequential(
-            # Bottleneck has expansion coefficient 4, so out_channels divided by 4
-            Bottleneck(inplanes=in_channels, planes=out_channels // 4),
-            Bottleneck(inplanes=in_channels, planes=out_channels // 4),
-        )
-        self.interpolation1 = nn.UpsamplingBilinear2d(size=(19, 19))
-        self.softmax2_blocks = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, 1, kernel_size=1, stride=1, bias=False),
-            nn.Sigmoid()
-        )
 
-    def mask_reg(self, x):
+    def forward(self, x):
         mask = self.map(x)
         mask = self.sigmoid(mask)
         x = x * mask
         return x, mask, 0
 
-    def mask_bottom_up_top_down(self, x):
+
+class BottomUpTopDownAttention(nn.Module):
+
+    def __init__(self, in_channels=728, out_channels=1):
+        super(BottomUpTopDownAttention, self).__init__()
+        # Bottom up top down
+        self.maxpool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.softmax1_blocks = nn.Sequential(
+            # Bottleneck has expansion coefficient 4, so out_channels divided by 4
+            Bottleneck(inplanes=in_channels, planes=in_channels // 4),
+            Bottleneck(inplanes=in_channels, planes=in_channels // 4),
+        )
+        self.interpolation1 = nn.UpsamplingBilinear2d(size=(19, 19))
+        self.softmax2_blocks = nn.Sequential(
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, bias=False),
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
         mask = self.maxpool1(x)
         mask = self.softmax1_blocks(mask)
         mask = self.interpolation1(mask) + x
         mask = self.softmax2_blocks(mask)
         x = (1 + mask) * x
         return x, mask, 0
+
+
+class SEAttention(nn.Module):
+
+    def __init__(self, channels, reduction):
+        super(SEAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        reduction_channels = max(channels // 16, 8)
+        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        module_input = x
+        x = self.avg_pool(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.sigmoid(x)
+        return module_input * x
+
+
+class XceptionMap(Xception):
+
+    def __init__(self, num_classes, in_chans, attn_type, **kwargs):
+        """ Constructor
+        Args:
+            attn_type (nn.Module): Include reg, butd(bottom-up top-down), map,
+            num_classes (int): number of classes
+        """
+        super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans, **kwargs)
+
+        self.mask_attn = attn_type()
+        # self.mask_reg = RegAttention()
+        # self.mask_bottom_up_top_down = BottomUpTopDownAttention()
 
     def forward_features(self, x):
         # Entry flow
@@ -71,10 +105,10 @@ class XceptionMap(Xception):
         x = self.block5(x)
         x = self.block6(x)
         x = self.block7(x)
-        if self.attn_type == 'reg':
-            x, mask, vec = self.mask_reg(x)
-        else:
-            x, mask, vec = self.mask_bottom_up_top_down(x)
+
+        # Attention
+        x, mask, vec = self.mask_attn(x)
+
         x = self.block8(x)
         x = self.block9(x)
         x = self.block10(x)
@@ -107,8 +141,15 @@ def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **
 
 
 def xception_reg(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
-    return _xception(pretrained, num_classes, in_chans, 'reg', **kwargs)
+    """[On the Detection of Digital Face Manipulation](https://arxiv.org/abs/1910.01717)"""
+    return _xception(pretrained, num_classes, in_chans, RegAttention, **kwargs)
 
 
 def xception_butd(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
-    return _xception(pretrained, num_classes, in_chans, 'butd', **kwargs)
+    """[Residual Attention Network for Image Classification](https://arxiv.org/abs/1704.06904)"""
+    return _xception(pretrained, num_classes, in_chans, BottomUpTopDownAttention, **kwargs)
+
+
+def xception_se(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
+    """[Squeeze-and-Excitation Networks](https://arxiv.org/abs/1709.01507)"""
+    return _xception(pretrained, num_classes, in_chans, 'se', **kwargs)

@@ -69,7 +69,7 @@ def show_metrics(args):
     acc = accuracy_score(y_true, y_pred)
     # ROC
     fpr, tpr, thresholds = roc_curve(y_true, y_score, drop_intermediate=False)
-    print(fpr, tpr)
+    # print(fpr, tpr)
     fnr = 1 - tpr
     # Equal error rate
     eer = fnr[np.nanargmin(np.absolute((fnr - fpr)))]
@@ -132,5 +132,8 @@ def main():
 
 
 if __name__ == '__main__':
-    # python test.py --data-dir /data/xinlin/dffd --arch xception --batch-size 100 --gpu 1 --resume weights/xception_dffd.pt
+    """
+    python test.py --data-dir /data/xinlin/dffd --arch xception --batch-size 100 --gpu 1 --resume weights/xception_dffd.pt
+    python test.py --data-dir /data/xinlin/dffd --arch xception
+    """
     main()

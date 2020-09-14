@@ -29,7 +29,7 @@ class XceptionTestCase(unittest.TestCase):
         model = xception(pretrained=True)
         model = model.cuda()
         input_size = (3, 299, 299)
-        summary(model, input_size=input_size)
+        summary(model, input_size=input_size, batch_size=10)
 
     def test_xception(self):
         model = xception(pretrained=True)
@@ -44,7 +44,7 @@ class XceptionTestCase(unittest.TestCase):
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ])),
-            batch_size=10, shuffle=False,
+            batch_size=20, shuffle=False,
             num_workers=1, pin_memory=True)
 
         validate(val_loader, model, criterion)

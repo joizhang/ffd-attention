@@ -71,9 +71,4 @@ def main():
 
 
 if __name__ == '__main__':
-    """
-    python train.py --data-dir /data/xinlin/dffd --arch xception --prefix dffd --epoch 5 --batch-size 32 --lr 0.0002 --gpu 1 --print-freq 30
-    python train.py --data-dir /data/xinlin/dffd --arch xception_reg --prefix dffd --epoch 5 --batch-size 32 --lr 0.0002 --gpu 1 --print-freq 30
-    python train.py --data-dir /data/xinlin/dffd --arch xception_butd --prefix dffd --epoch 5 --batch-size 32 --lr 0.0002 --gpu 1 --print-freq 30
-    """
     main()

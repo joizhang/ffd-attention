@@ -154,7 +154,6 @@ class Xception(nn.Module):
         self.block12 = Block(728, 1024, 2, 2, start_with_relu=True, grow_first=False)
         self.conv3 = SeparableConv2d(1024, 1536, 3, 1, 1)
         self.bn3 = nn.BatchNorm2d(1536)
-
         # do relu here
         self.conv4 = SeparableConv2d(1536, self.num_features, 3, 1, 1)
         self.bn4 = nn.BatchNorm2d(self.num_features)

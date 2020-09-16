@@ -132,8 +132,4 @@ def main():
 
 
 if __name__ == '__main__':
-    """
-    python test.py --data-dir /data/xinlin/dffd --arch xception --batch-size 100 --gpu 1 --resume weights/xception_dffd.pt
-    python test.py --data-dir /data/xinlin/dffd --arch xception
-    """
     main()

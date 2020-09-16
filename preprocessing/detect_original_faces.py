@@ -7,7 +7,8 @@ from typing import Type
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
-from preprocessing import face_detector, VideoDataset
+from preprocessing import face_detector
+from preprocessing.face_detector import VideoDataset
 from preprocessing.face_detector import VideoFaceDetector
 
 

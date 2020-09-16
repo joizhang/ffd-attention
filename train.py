@@ -41,7 +41,7 @@ def main():
 
     print("Initializing Data Loader")
     if args.prefix == 'dffd':
-        train_loader = get_dffd_dataloader(model, args, 'train', num_workers=1)
+        train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
         val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
     else:
         train_loader, val_loader = get_celeba_df_dataloader(model, args)

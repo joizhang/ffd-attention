@@ -107,6 +107,7 @@ data/
 logs/
 saved/
 .pytest_cache/
+.vscode/
 
 *.gz
 *.csv

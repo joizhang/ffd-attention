@@ -18,7 +18,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
 
-detector = MTCNN(margin=0, thresholds=[0.65, 0.75, 0.75], device="cpu")
+detector = MTCNN(margin=0, thresholds=[0.65, 0.75, 0.75], device="cuda:0")
 
 
 def parse_args():
@@ -28,34 +28,31 @@ def parse_args():
     return args
 
 
-def save_landmarks(ori_id, root_dir):
-    ori_id = ori_id[:-4]
+def save_landmarks(ori_path, root_dir):
+    ori_id = os.path.basename(ori_path)[:-4]
     ori_dir = os.path.join(root_dir, "crops", ori_id)
     landmark_dir = os.path.join(root_dir, "landmarks", ori_id)
     if os.path.exists(landmark_dir):
         return
     os.makedirs(landmark_dir, exist_ok=True)
 
-    for frame in range(320):
-        if frame % 10 != 0:
-            continue
-        for actor in range(2):
-            image_id = "{}_{}.png".format(frame, actor)
-            landmarks_id = "{}_{}".format(frame, actor)
-            ori_path = os.path.join(ori_dir, image_id)
-            landmark_path = os.path.join(landmark_dir, landmarks_id)
+    for frame in os.listdir(ori_dir):
+        image_id = frame[:-4]
+        landmarks_id = image_id
+        ori_path = os.path.join(ori_dir, frame)
+        landmark_path = os.path.join(landmark_dir, landmarks_id)
 
-            if os.path.exists(ori_path):
-                try:
-                    image_ori = cv2.imread(ori_path, cv2.IMREAD_COLOR)[..., ::-1]
-                    frame_img = Image.fromarray(image_ori)
-                    batch_boxes, conf, landmarks = detector.detect(frame_img, landmarks=True)
-                    if landmarks is not None:
-                        landmarks = np.around(landmarks[0]).astype(np.int16)
-                        np.save(landmark_path, landmarks)
-                except Exception as e:
-                    print(e)
-                    pass
+        if os.path.exists(ori_path):
+            try:
+                image_ori = cv2.imread(ori_path, cv2.IMREAD_COLOR)[..., ::-1]
+                frame_img = Image.fromarray(image_ori)
+                batch_boxes, conf, landmarks = detector.detect(frame_img, landmarks=True)
+                if landmarks is not None:
+                    landmarks = np.around(landmarks[0]).astype(np.int16)
+                    np.save(landmark_path, landmarks)
+            except Exception as e:
+                print(e)
+                pass
 
 
 def main():

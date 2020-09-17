@@ -11,10 +11,10 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 """
-Real face images: FFHQ, CelebA
-Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
-Attributes manipulation: FaceAPP, StarGAN
-Entire face synthesis: PGGAN, StyleGAN
+1. Real face images: FFHQ, CelebA
+2. Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
+3. Attributes manipulation: FaceAPP, StarGAN
+4. Entire face synthesis: PGGAN, StyleGAN
 """
 CLASSES = {
     'Real': 0,

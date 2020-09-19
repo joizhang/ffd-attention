@@ -33,43 +33,51 @@ def fixed_padding(inputs, kernel_size, dilation):
     return padded_inputs
 
 
+# Calculate symmetric padding for a convolution
+def get_padding(kernel_size: int, stride: int = 1, dilation: int = 1, **_) -> int:
+    padding = ((stride - 1) + dilation * (kernel_size - 1)) // 2
+    return padding
+
+
 class SeparableConv2d(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, dilation=1, bias=False):
+    def __init__(self, inplanes, planes, kernel_size=3, stride=1, dilation=1, bias=False):
         super(SeparableConv2d, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 0, dilation, groups=in_channels,
-                               bias=bias)
-        self.pointwise = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1, 1, bias=bias)
+        padding = get_padding(kernel_size, stride, dilation)
+        self.convdw = nn.Conv2d(inplanes, inplanes, kernel_size, stride, padding, dilation, groups=inplanes,
+                                bias=bias)
+        self.bn = nn.BatchNorm2d(num_features=inplanes)
+        self.convpw = nn.Conv2d(inplanes, planes, kernel_size=1, bias=bias)
 
     def forward(self, x):
-        x = fixed_padding(x, self.conv1.kernel_size[0], dilation=self.conv1.dilation[0])
-        x = self.conv1(x)
-        x = self.pointwise(x)
+        x = self.convdw(x)
+        x = self.bn(x)
+        x = self.convpw(x)
         return x
 
 
 class Block(nn.Module):
 
-    def __init__(self, in_filters, out_filters, reps, stride=1, dilation=1,
+    def __init__(self, inplanes, planes, reps, stride=1, dilation=1,
                  start_with_relu=True, grow_first=True, is_last=False):
         super(Block, self).__init__()
 
-        if out_filters != in_filters or stride != 1:
-            self.skip = nn.Conv2d(in_filters, out_filters, 1, stride=stride, bias=False)
-            self.skipbn = nn.BatchNorm2d(out_filters)
+        if planes != inplanes or stride != 1:
+            self.skip = nn.Conv2d(inplanes, planes, 1, stride=stride, bias=False)
+            self.skipbn = nn.BatchNorm2d(planes)
         else:
             self.skip = None
 
         self.relu = nn.ReLU(inplace=True)
         rep = []
 
-        filters = in_filters
+        filters = inplanes
         if grow_first:
             rep.append(self.relu)
-            rep.append(SeparableConv2d(in_filters, out_filters, 3, 1, dilation))
-            rep.append(nn.BatchNorm2d(out_filters))
-            filters = out_filters
+            rep.append(SeparableConv2d(inplanes, planes, 3, 1, dilation))
+            rep.append(nn.BatchNorm2d(planes))
+            filters = planes
 
         for i in range(reps - 1):
             rep.append(self.relu)
@@ -78,21 +86,21 @@ class Block(nn.Module):
 
         if not grow_first:
             rep.append(self.relu)
-            rep.append(SeparableConv2d(in_filters, out_filters, 3, 1, dilation))
-            rep.append(nn.BatchNorm2d(out_filters))
+            rep.append(SeparableConv2d(inplanes, planes, 3, 1, dilation))
+            rep.append(nn.BatchNorm2d(planes))
 
         if not start_with_relu:
             rep = rep[1:]
 
         if stride != 1:
             rep.append(self.relu)
-            rep.append(SeparableConv2d(out_filters, out_filters, 3, 2))
-            rep.append(nn.BatchNorm2d(out_filters))
+            rep.append(SeparableConv2d(planes, planes, 3, 2))
+            rep.append(nn.BatchNorm2d(planes))
 
         if stride == 1 and is_last:
             rep.append(self.relu)
-            rep.append(SeparableConv2d(out_filters, out_filters, 3, 1))
-            rep.append(nn.BatchNorm2d(out_filters))
+            rep.append(SeparableConv2d(planes, planes, 3, 1))
+            rep.append(nn.BatchNorm2d(planes))
 
         self.rep = nn.Sequential(*rep)
 

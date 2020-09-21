@@ -102,7 +102,7 @@ ENV/
 
 # Custom folder
 .idea/
-temp/
+../celeb-df-detection/temp/
 data/
 logs/
 saved/

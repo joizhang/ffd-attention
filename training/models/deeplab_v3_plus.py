@@ -7,9 +7,10 @@ from training.models import aligned_xception
 
 class DeepLabV3Plus(nn.Module):
 
-    def __init__(self, backbone='resnet', output_stride=16, num_classes=21, freeze_bn=True):
+    def __init__(self, backbone='resnet', output_stride=16, num_classes=2, freeze_bn=True):
         super(DeepLabV3Plus, self).__init__()
 
+        self.num_features = 2048
         if backbone == 'resnet':
             low_level_inplanes = 256
         elif backbone == 'xception':
@@ -20,15 +21,20 @@ class DeepLabV3Plus(nn.Module):
             raise NotImplementedError
 
         self.backbone = aligned_xception(output_stride=output_stride)
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool2d(output_size=1),
+            nn.Linear(self.num_features, num_classes)
+        )
         self.aspp = build_aspp(in_channels=2048)
         self.decoder = build_decoder(low_level_inplanes, num_classes)
         self.freeze_bn = freeze_bn
 
     def forward(self, inputs):
         x, low_level_feat = self.backbone(inputs)
-        x = self.aspp(x)
-        x = self.decoder(x, low_level_feat)
-        return x
+        x = self.classifier(x)
+        mask = self.aspp(x)
+        mask = self.decoder(mask, low_level_feat)
+        return x, mask
 
     def freeze_bn(self):
         for m in self.modules():
@@ -36,7 +42,7 @@ class DeepLabV3Plus(nn.Module):
                 m.eval()
 
     def get_1x_lr_params(self):
-        modules = [self.backbone]
+        modules = [self.backbone, self.classifier]
         for i in range(len(modules)):
             for m in modules[i].named_modules():
                 if self.freeze_bn:

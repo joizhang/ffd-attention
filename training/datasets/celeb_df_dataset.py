@@ -42,26 +42,6 @@ class CelebDFV2Dataset(Dataset):
         else:
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
 
-        # landmark_path = os.path.join(self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
-        # if os.path.exists(landmark_path) and random.random() < 0.3:
-        #     landmarks = np.load(landmark_path)
-        #     image, mask = remove_landmark(image, mask, landmarks)
-        # elif random.random() < 0.2:
-        #     blackout_convex_hull(image, mask)
-        # elif random.random() < 0.1:
-        #     bitmap_masks = prepare_bit_masks(mask)
-        #     bitmap_mask = random.choice(bitmap_masks)
-        #     image = np.multiply(image, np.expand_dims(bitmap_mask, axis=2))
-        #     mask = np.multiply(mask, bitmap_mask)
-        # elif label == 1 and random.random() < 0.4:
-        #     image_tmp, mask_tmp = np.copy(image), np.copy(mask)
-        #     drop_background(image, mask)
-        #     g_transformed = self.generalization_transform(image=image, mask=mask)
-        #     image = g_transformed["image"]
-        #     mask = g_transformed["mask"]
-        #     if random.random() < 0.5:
-        #         image, mask = blend_back(image_tmp, image, mask_tmp, mask)
-
         # data augmentation
         transformed = self.transform(image=image, mask=mask)
         image = transformed["image"]

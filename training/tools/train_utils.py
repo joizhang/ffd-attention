@@ -81,7 +81,7 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
             progress.display(batch_idx)
 
 
-def validate(val_loader, model, loss_functions, args):
+def validate(val_loader, model, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(val_loader), [batch_time, top1], prefix='Test: ')

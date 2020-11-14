@@ -12,7 +12,8 @@ from torch.backends import cudnn
 
 from config import Config
 from training import models
-from training.datasets.dffd_dataset import get_celeba_df_dataloader, get_dffd_dataloader
+from training.datasets.dffd_dataset import get_dffd_dataloader
+from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
 from training.tools.train_utils import parse_args, train, validate
 
 torch.backends.cudnn.benchmark = True
@@ -45,7 +46,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
         val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
     else:
-        train_loader, val_loader = get_celeba_df_dataloader(model, args)
+        train_loader, val_loader = get_face_forensics_dataloader(model, args)
     # print(next(iter(val_loader)))
 
     print("Initializing Distribution")
@@ -98,17 +99,23 @@ def main_worker(gpu, ngpus_per_node, args):
     }
 
     if args.evaluate:
-        validate(val_loader, model, loss_functions, args)
+        validate(val_loader, model, args)
         return
 
     print("Start Training")
+    better_acc = False
     for epoch in range(start_epoch, args.epochs + 1):
         train(train_loader, model, optimizer, loss_functions, epoch, args)
-        acc1 = validate(val_loader, model, loss_functions, args)
 
-        best_acc1 = max(acc1, best_acc1)
+        if epoch % 2 == 0 or epoch == args.epochs:
+            acc1 = validate(val_loader, model, args)
+            better_acc = best_acc1 < acc1
+            best_acc1 = max(acc1, best_acc1)
 
-        if epoch == args.epochs:
+        is_main_node = not args.multiprocessing_distributed or (
+                args.multiprocessing_distributed and args.rank % ngpus_per_node == 0)
+        save_model = (better_acc or (epoch == args.epochs) or (epoch % 5 == 0)) and is_main_node
+        if save_model:
             print('Save model')
             torch.save({
                 'epoch': epoch,
@@ -117,6 +124,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict(),
             }, os.path.join('weights', '{}_{}.pt'.format(args.arch, args.prefix)))
+        better_acc = False
 
 
 def main():

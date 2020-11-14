@@ -1,10 +1,46 @@
 import math
 import random
 
+import albumentations as A
 import cv2
 import numpy as np
 from albumentations import DualTransform
+from albumentations.pytorch import ToTensorV2
 from scipy.ndimage import binary_dilation
+
+
+def create_train_transform(model_cfg):
+    size = model_cfg['input_size'][1]
+    mean = model_cfg['mean']
+    std = model_cfg['std']
+    return A.Compose([
+        A.ImageCompression(quality_lower=20, quality_upper=100, p=0.5),
+        A.GaussNoise(p=0.1),
+        A.GaussianBlur(blur_limit=3, p=0.05),
+        A.HorizontalFlip(),
+        A.OneOf([
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_LINEAR),
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_LINEAR, interpolation_up=cv2.INTER_LINEAR),
+        ], p=1),
+        A.PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT, value=0),
+        # A.ToGray(p=0.1),
+        # A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2, rotate_limit=15, border_mode=cv2.BORDER_CONSTANT, p=0.5),
+        A.Normalize(mean=mean, std=std),
+        ToTensorV2(),
+    ])
+
+
+def create_val_test_transform(model_cfg):
+    size = model_cfg['input_size'][1]
+    mean = model_cfg['mean']
+    std = model_cfg['std']
+    return A.Compose([
+        IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
+        A.PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT, value=0),
+        A.Normalize(mean=mean, std=std),
+        ToTensorV2(),
+    ])
 
 
 def prepare_bit_masks(mask):

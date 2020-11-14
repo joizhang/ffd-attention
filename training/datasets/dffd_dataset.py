@@ -2,17 +2,10 @@ import os
 from glob import glob
 from pathlib import Path
 
-import albumentations as A
 import cv2
 import numpy as np
-import pandas as pd
-import torch
-from albumentations.pytorch import ToTensorV2
-from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-
-from training.datasets.transform import IsotropicResize
 
 """
 1. Real face images: FFHQ, CelebA
@@ -91,27 +84,6 @@ class DffdDataset(Dataset):
         return len(self.data)
 
 
-class CelebDFV2Dataset(Dataset):
-
-    def __init__(self, data_root, df: DataFrame, mode, transform, ):
-        self.data_root = data_root
-        self.df = df
-        self.mode = mode
-        self.transform = transform
-
-    def __getitem__(self, index):
-        video, img_file, label, ori_video, frame = self.df.iloc[index].values
-        img_path = os.path.join(self.data_root, 'crops', video, img_file)
-        image = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = self.transform(image)
-        return image, label
-
-    def __len__(self):
-        r = self.df.shape[0]
-        return r
-
-
 def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
     input_size = model.default_cfg['input_size']
     transform = transforms.Compose([
@@ -130,55 +102,3 @@ def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
     dataloader = DataLoader(dataset, args.batch_size, shuffle, num_workers=num_workers, pin_memory=True,
                             drop_last=False)
     return dataloader
-
-
-def create_train_transform(size):
-    return A.Compose([
-        # A.ImageCompression(quality_lower=60, quality_upper=100, p=0.5),
-        # A.GaussNoise(p=0.1),
-        # A.GaussianBlur(blur_limit=3, p=0.05),
-        # A.HorizontalFlip(),
-        A.OneOf([
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_LINEAR),
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_LINEAR, interpolation_up=cv2.INTER_LINEAR),
-        ], p=1),
-        A.PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT, value=0),
-        # A.OneOf([A.RandomBrightnessContrast(), A.FancyPCA(), A.HueSaturationValue()], p=0.7),
-        # A.ToGray(p=0.2),
-        # A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, p=0.5),
-        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-        ToTensorV2(),
-    ])
-
-
-def create_val_transform(size):
-    return A.Compose([
-        IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
-        A.PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT, value=0),
-        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-        ToTensorV2(),
-    ])
-
-
-def get_celeba_df_dataloader(model, args, pin_memory=True):
-    input_size = model.default_cfg['input_size']
-    # resize = int(input_size[1] / model.default_cfg['crop_pct'])
-
-    train_df = pd.read_csv('data_train.csv')
-    train_transform = create_train_transform(input_size[1])
-    train_data = CelebDFV2Dataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
-    else:
-        train_sampler = None
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=(train_sampler is None),
-                              sampler=train_sampler, num_workers=args.workers, pin_memory=pin_memory, drop_last=True)
-
-    val_df = pd.read_csv('data_val.csv')
-    val_transform = create_val_transform(input_size[1])
-    val_data = CelebDFV2Dataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
-                            pin_memory=pin_memory, drop_last=False)
-
-    return train_sampler, train_loader, val_loader

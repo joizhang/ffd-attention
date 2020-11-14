@@ -24,6 +24,7 @@ The resize parameter of the validation transform should be 333, and make sure to
 import torch.nn as nn
 import torch.nn.functional as F
 
+from training.models.constants import IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
 from training.tools.model_utils import load_pretrained
 
 __all__ = ['default_cfgs', 'SeparableConv2d', 'Block', 'Xception', 'xception']
@@ -35,8 +36,8 @@ default_cfgs = {
         'pool_size': (10, 10),
         'crop_pct': 0.8975,
         'interpolation': 'bicubic',
-        'mean': (0.5, 0.5, 0.5),
-        'std': (0.5, 0.5, 0.5),
+        'mean': IMAGENET_INCEPTION_MEAN,
+        'std': IMAGENET_INCEPTION_STD,
         'num_classes': 1000,
         'first_conv': 'conv1',
         'classifier': 'fc'

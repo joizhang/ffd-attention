@@ -102,12 +102,12 @@ ENV/
 
 # Custom folder
 .idea/
-../celeb-df-detection/temp/
 data/
 logs/
 saved/
 .pytest_cache/
 .vscode/
+temp/
 
 *.gz
 *.csv

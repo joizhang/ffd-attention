@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, auc, roc_curve
 from torch.backends import cudnn
 
 from training import models
-from training.datasets.classifier_dataset import get_dffd_dataloader
+from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.tools.model_utils import AverageMeter, ProgressMeter, accuracy
 from training.tools.train_utils import parse_args
 

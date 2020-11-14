@@ -7,6 +7,8 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
+from training.datasets.transform import create_transform
+
 """
 1. Real face images: FFHQ, CelebA
 2. Identity and expression swap: FaceForensics++(FaceSwap and Deepfake)
@@ -85,8 +87,7 @@ class DffdDataset(Dataset):
 
 
 def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
-    input_size = model.default_cfg['input_size']
-    mask_transform, transform = create_train_transform(input_size, model)
+    mask_transform, transform = create_transform(model.default_cfg)
     dataset = DffdDataset(args.data_dir, mode, transform=transform, mask_transform=mask_transform)
     dataloader = DataLoader(dataset, args.batch_size, shuffle, num_workers=num_workers, pin_memory=True,
                             drop_last=False)

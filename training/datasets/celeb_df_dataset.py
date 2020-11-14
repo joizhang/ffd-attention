@@ -9,7 +9,7 @@ from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
 from preprocessing.constants import CELEB_DF
-from training.datasets.transform import create_train_transform, create_val_test_transform
+from training.datasets.transform import create_transform
 
 
 def create_generalization_transform():
@@ -57,7 +57,7 @@ class CelebDFV2Dataset(Dataset):
 
 def get_celeba_df_dataloader(model, args):
     train_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train.csv')
-    train_transform = create_train_transform(model.default_cfg)
+    train_transform = create_transform(model.default_cfg)
     train_data = CelebDFV2Dataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)

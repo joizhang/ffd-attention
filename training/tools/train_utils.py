@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from training import models
-from training.tools.model_utils import ProgressMeter, AverageMeter, accuracy
+from training.tools.metrics import ProgressMeter, AverageMeter, accuracy, eval_metrics
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -73,15 +73,20 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
 
     end = time.time()
     for batch_idx, sample in enumerate(train_loader):
-        images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
+        if args.gpu is not None:
+            images = sample['images'].cuda(args.gpu, non_blocking=True)
+            labels = sample['labels'].cuda(args.gpu, non_blocking=True)
+            masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+        else:
+            images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
-        # compute output
+            # compute output
         outputs = model(images)
         if isinstance(outputs, tuple):
             labels_pred, mask_output, vec = outputs
             loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
             loss_map = loss_functions['map_loss'](mask_output, masks)
-            loss = loss_classifier + loss_map
+            loss = loss_classifier + 10. * loss_map
         else:
             labels_pred = outputs
             loss = loss_functions['classifier_loss'](labels_pred, labels)
@@ -99,32 +104,41 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if batch_idx % args.print_freq == 0:
-            progress.display(batch_idx)
+        if (batch_idx + 1) % args.print_freq == 0:
+            progress.display(batch_idx + 1)
 
 
 def validate(val_loader, model, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
-    progress = ProgressMeter(len(val_loader), [batch_time, top1], prefix='Test: ')
+    pw_acc = AverageMeter('Pixel-wise Acc', ':6.2f')
+    progress = ProgressMeter(len(val_loader), [batch_time, top1, pw_acc], prefix='Test: ')
 
     model.eval()
 
     with torch.no_grad():
         end = time.time()
         for batch_idx, sample in enumerate(val_loader):
-            images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
+            if args.gpu is not None:
+                images = sample['images'].cuda(args.gpu, non_blocking=True)
+                labels = sample['labels'].cuda(args.gpu, non_blocking=True)
+                masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+            else:
+                images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
             # compute output
             outputs = model(images)
             if isinstance(outputs, tuple):
-                labels_pred, mask_output, vec = outputs
+                labels_pred, masks_pred, vec = outputs
             else:
                 labels_pred = outputs
 
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
+            if isinstance(outputs, tuple):
+                overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
+                pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)

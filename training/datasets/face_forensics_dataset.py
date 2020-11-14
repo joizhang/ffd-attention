@@ -48,7 +48,7 @@ class FaceForensicsDataset(Dataset):
         # transformed = self.transform(image=image, mask=mask)
         # image = transformed["image"]
         # mask = transformed["mask"]
-        mask = mask.unsqueeze(0) / 255.
+        mask = mask / 255.
 
         return {'images': image, 'labels': label, 'masks': mask}
 

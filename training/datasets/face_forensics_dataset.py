@@ -15,7 +15,7 @@ FACE_FORENSICS = 'ff++'
 
 class FaceForensicsDataset(Dataset):
 
-    def __init__(self, data_root, df: DataFrame, mode, transform: A.Compose, fake_type="Deepfakes"):
+    def __init__(self, data_root, df: DataFrame, mode, transform=None, mask_transform=None, fake_type="Deepfakes"):
         """
         Args:
             fake_type(str): Deepfakes, Face2Face, FaceShifter, FaceSwap, NeuralTextures

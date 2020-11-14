@@ -17,15 +17,18 @@ def parse_args():
     parser.add_argument('--data-dir', metavar='DIR', help='path to dataset')
     parser.add_argument('--arch', metavar='ARCH', default='vgg16', choices=model_names,
                         help='model architecture: ' + ' | '.join(model_names) + ' (default: vgg16)')
+    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                        help='number of data loading workers (default: 4)')
     parser.add_argument('--prefix', type=str, default='dffd')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='batch size')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
-    # parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
-    #                     help='Learning rate step gamma (default: 0.7)')
-    parser.add_argument('--gpu', type=int, default=0, help='GPU id to use.')
-    parser.add_argument('--seed', type=int, default=111, help='manual seed')
+    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                        help='momentum')
+    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
+                        metavar='W', help='weight decay (default: 1e-4)',
+                        dest='weight_decay')
     # parser.add_argument('--signature', default=str(datetime.datetime.now()))
     parser.add_argument('--print-freq', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
@@ -34,9 +37,28 @@ def parse_args():
     # parser.add_argument('--save_dir', default='./runs', help='directory for result')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
-    parser.add_argument('--folds-csv', type=str, default='folds.csv')
-    parser.add_argument('--localization', dest='localization', action='store_true',
-                        help='Manipulation Localization')
+    # parser.add_argument('--folds-csv', type=str, default='folds.csv')
+    # parser.add_argument('--localization', dest='localization', action='store_true',
+    #                     help='Manipulation Localization')
+
+    parser.add_argument('--world-size', default=-1, type=int,
+                        help='number of nodes for distributed training')
+    parser.add_argument('--rank', default=-1, type=int,
+                        help='node rank for distributed training')
+    parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str,
+                        help='url used to set up distributed training')
+    parser.add_argument('--dist-backend', default='nccl', type=str,
+                        help='distributed backend')
+    parser.add_argument('--seed', default=111, type=int,
+                        help='seed for initializing training. ')
+    parser.add_argument('--gpu', default=None, type=int,
+                        help='GPU id to use.')
+    parser.add_argument('--multiprocessing-distributed', action='store_true',
+                        help='Use multi-processing distributed training to launch '
+                             'N processes per node, which has N GPUs. This is the '
+                             'fastest way to use PyTorch for either single node or '
+                             'multi node data parallel training')
+
     args = parser.parse_args()
     return args
 

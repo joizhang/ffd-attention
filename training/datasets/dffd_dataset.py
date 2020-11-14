@@ -86,18 +86,7 @@ class DffdDataset(Dataset):
 
 def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
     input_size = model.default_cfg['input_size']
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((input_size[1], input_size[2])),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
-    ])
-    mask_transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((19, 19)),
-        transforms.Grayscale(num_output_channels=1),
-        transforms.ToTensor()
-    ])
+    mask_transform, transform = create_train_transform(input_size, model)
     dataset = DffdDataset(args.data_dir, mode, transform=transform, mask_transform=mask_transform)
     dataloader = DataLoader(dataset, args.batch_size, shuffle, num_workers=num_workers, pin_memory=True,
                             drop_last=False)

@@ -10,7 +10,7 @@ class Config(dict):
     def __init__(self):
         super().__init__()
         assert os.path.exists(os.path.join(BASE_DIR, '.env'))
-        print('Importing environment from .env file')
+        # print('Importing environment from .env file')
         env_values = dotenv_values(os.path.join(BASE_DIR, '.env'))
         # print(env_values)
         for key in env_values:

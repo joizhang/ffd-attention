@@ -43,10 +43,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
     print("Initializing Data Loader")
     if args.prefix == 'dffd':
-        train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
+        train_sampler, train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
         val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
     else:
-        train_loader, val_loader = get_face_forensics_dataloader(model, args)
+        train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args)
     # print(next(iter(val_loader)))
 
     print("Initializing Distribution")
@@ -105,6 +105,8 @@ def main_worker(gpu, ngpus_per_node, args):
     print("Start Training")
     better_acc = False
     for epoch in range(start_epoch, args.epochs + 1):
+        if args.distributed:
+            train_sampler.set_epoch(epoch)
         train(train_loader, model, optimizer, loss_functions, epoch, args)
 
         if epoch % 2 == 0 or epoch == args.epochs:

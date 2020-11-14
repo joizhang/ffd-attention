@@ -7,7 +7,23 @@ import numpy as np
 from albumentations import DualTransform
 from albumentations.pytorch import ToTensorV2
 from scipy.ndimage import binary_dilation
+from torchvision import transforms
 
+
+def create_train_transform(input_size, model):
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((input_size[1], input_size[2])),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=model.default_cfg['mean'], std=model.default_cfg['std'])
+    ])
+    mask_transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((19, 19)),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.ToTensor()
+    ])
+    return mask_transform, transform
 
 def create_train_transform(model_cfg):
     size = model_cfg['input_size'][1]

@@ -1,9 +1,9 @@
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
+from training.models.resnet import Bottleneck
 from training.models.xception import default_cfgs, SeparableConv2d, Xception
 from training.tools.model_utils import load_pretrained
-from training.models import Bottleneck
 
 __all__ = ['xception_reg', 'xception_butd', 'xception_se']
 

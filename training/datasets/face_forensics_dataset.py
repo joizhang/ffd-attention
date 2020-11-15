@@ -7,14 +7,14 @@ import torch
 from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
-from training.datasets.transform import create_transform
+from training.datasets.transform import create_train_transform, create_val_test_transform
 
 FACE_FORENSICS = 'ff++'
 
 
 class FaceForensicsDataset(Dataset):
 
-    def __init__(self, data_root, df: DataFrame, mode, transform=None, mask_transform=None, fake_type="Deepfakes"):
+    def __init__(self, data_root, df: DataFrame, mode, transform=None, fake_type="Deepfakes"):
         """
         Args:
             fake_type(str): Deepfakes, Face2Face, FaceShifter, FaceSwap, NeuralTextures
@@ -24,7 +24,6 @@ class FaceForensicsDataset(Dataset):
         self.df = df
         self.mode = mode
         self.transform = transform
-        self.mask_transform = mask_transform
         self.fake_type = fake_type
 
     def __getitem__(self, index):
@@ -43,11 +42,9 @@ class FaceForensicsDataset(Dataset):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
         # data augmentation
-        image = self.transform(image)
-        mask = self.mask_transform(mask)
-        # transformed = self.transform(image=image, mask=mask)
-        # image = transformed["image"]
-        # mask = transformed["mask"]
+        transformed = self.transform(image=image, mask=mask)
+        image = transformed["image"]
+        mask = transformed["mask"]
         mask = mask / 255.
 
         return {'images': image, 'labels': label, 'masks': mask}
@@ -59,10 +56,9 @@ class FaceForensicsDataset(Dataset):
 
 def get_face_forensics_dataloader(model, args):
     train_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_train.csv')
-    train_df = train_df.iloc[:100]
-    transform, mask_transform = create_transform(model.default_cfg)
-    train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=transform,
-                                      mask_transform=mask_transform)
+    # train_df = train_df.iloc[:100]
+    train_transform = create_train_transform(model.default_cfg)
+    train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
     else:
@@ -71,9 +67,9 @@ def get_face_forensics_dataloader(model, args):
                               sampler=train_sampler, num_workers=args.workers, pin_memory=True, drop_last=True)
 
     val_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_val.csv')
-    val_df = val_df.iloc[:100]
-    val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=transform,
-                                    mask_transform=mask_transform)
+    # val_df = val_df.iloc[:100]
+    val_transform = create_val_test_transform(model.default_cfg)
+    val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform)
     val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
                             pin_memory=True, drop_last=False)
 
@@ -83,9 +79,8 @@ def get_face_forensics_dataloader(model, args):
 def get_face_forensics_test_dataloader(model, args):
     test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakess_test.csv')
     # test_df = test_df.iloc[:57265]
-    transform, mask_transform = create_transform(model.default_cfg)
-    test_data = FaceForensicsDataset(data_root=args.data_dir, df=test_df, mode='test', transform=transform,
-                                     mask_transform=mask_transform)
+    test_transform = create_val_test_transform(model.default_cfg)
+    test_data = FaceForensicsDataset(data_root=args.data_dir, df=test_df, mode='test', transform=test_transform)
     test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
                              pin_memory=True, drop_last=True)
     return test_loader

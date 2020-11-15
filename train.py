@@ -39,7 +39,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                 world_size=args.world_size, rank=args.rank)
 
     print("Initializing Networks")
-    model = models.__dict__[args.arch](pretrained=True)
+    model = models.__dict__[args.arch](pretrained=True, use_decoder=True)
 
     print("Initializing Data Loader")
     if args.prefix == 'dffd':

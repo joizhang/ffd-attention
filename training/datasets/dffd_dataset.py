@@ -4,10 +4,10 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from timm.data import create_transform
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
 
-from training.datasets.transform import create_transform
+from training.datasets.transform import create_val_test_transform
 
 """
 1. Real face images: FFHQ, CelebA
@@ -38,11 +38,10 @@ DFFD = {
 
 class DffdDataset(Dataset):
 
-    def __init__(self, data_root, mode, transform=None, mask_transform=None):
+    def __init__(self, data_root, mode, transform):
         self.data_root = data_root
         self.mode = mode
         self.transform = transform
-        self.mask_transform = mask_transform
         self.data = []
         self._prepare_data()
 
@@ -79,7 +78,13 @@ class DffdDataset(Dataset):
         elif label == 4:
             mask = np.ones((image.size(1), image.size(2)), dtype=np.uint8) * 255
             label = 1
-        mask = self.mask_transform(mask)
+
+        # data augmentation
+        transformed = self.transform(image=image, mask=mask)
+        image = transformed["image"]
+        mask = transformed["mask"]
+        mask = mask / 255.
+
         return {'images': image, 'labels': label, 'masks': mask}
 
     def __len__(self):
@@ -87,8 +92,11 @@ class DffdDataset(Dataset):
 
 
 def get_dffd_dataloader(model, args, mode, shuffle=True, num_workers=1):
-    mask_transform, transform = create_transform(model.default_cfg)
-    dataset = DffdDataset(args.data_dir, mode, transform=transform, mask_transform=mask_transform)
+    if mode == 'train':
+        transform = create_transform(model.default_cfg)
+    else:
+        transform = create_val_test_transform(model.default_cfg)
+    dataset = DffdDataset(args.data_dir, mode, transform=transform)
     dataloader = DataLoader(dataset, args.batch_size, shuffle, num_workers=num_workers, pin_memory=True,
                             drop_last=False)
     return dataloader

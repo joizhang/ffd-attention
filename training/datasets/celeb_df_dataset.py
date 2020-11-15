@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame
+from timm.data import create_transform
 from torch.utils.data import Dataset, DataLoader
 
 from preprocessing.constants import CELEB_DF
-from training.datasets.transform import create_transform
+from training.datasets.transform import create_val_test_transform
 
 
 def create_generalization_transform():

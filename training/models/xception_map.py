@@ -20,7 +20,7 @@ class RegAttention(nn.Module):
         mask = self.map(x)
         mask = self.sigmoid(mask)
         x = x * mask
-        return x, mask, 0
+        return x, mask
 
 
 class BottomUpTopDownAttention(nn.Module):
@@ -51,7 +51,7 @@ class BottomUpTopDownAttention(nn.Module):
         mask = self.interpolation1(mask) + x
         mask = self.softmax2_blocks(mask)
         x = (1 + mask) * x
-        return x, mask, 0
+        return x, mask
 
 
 class SEAttention(nn.Module):
@@ -80,12 +80,31 @@ class XceptionMap(Xception):
     def __init__(self, num_classes, in_chans, attn_type, **kwargs):
         """ Constructor
         Args:
-            attn_type (nn.Module): Include reg(Direct Regression), butd(Bottom-up Top-down), SE(Squeeze and Excitation),
             num_classes (int): number of classes
+            attn_type (nn.Module): Include reg(Direct Regression), butd(Bottom-up Top-down), SE(Squeeze and Excitation),
         """
-        super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans, **kwargs)
+        super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans)
 
         self.mask_attn = attn_type()
+        self.use_decoder = kwargs.pop('use_decoder', False)
+
+        if self.use_decoder:
+            self.decoder = nn.Sequential(
+                nn.ConvTranspose2d(1, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
+                nn.BatchNorm2d(16),
+                nn.ReLU(),
+                nn.ConvTranspose2d(16, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
+                nn.BatchNorm2d(16),
+                nn.ReLU(),
+                nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
+                nn.BatchNorm2d(8),
+                nn.ReLU(),
+                nn.ConvTranspose2d(8, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
+                nn.BatchNorm2d(8),
+                nn.ReLU(),
+                nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1, output_padding=0),
+                nn.Softmax(dim=1)
+            )
 
     def forward_features(self, x):
         # Entry flow
@@ -104,7 +123,7 @@ class XceptionMap(Xception):
         x = self.block6(x)
         x = self.block7(x)
         # Attention mechanism
-        x, mask, vec = self.mask_attn(x)
+        x, mask = self.mask_attn(x)
         x = self.block8(x)
         x = self.block9(x)
         x = self.block10(x)
@@ -116,15 +135,17 @@ class XceptionMap(Xception):
         x = self.relu(x)
         x = self.conv4(x)
         x = self.bn4(x)
-        return x, mask, vec
+        return x, mask
 
     def forward(self, x):
-        x, mask, vec = self.forward_features(x)
+        x, mask = self.forward_features(x)
+        if self.use_decoder:
+            mask = self.decoder(mask)
         x = self.global_pool(x).flatten(1)
         if self.drop_rate:
             F.dropout(x, self.drop_rate, training=self.training)
         x = self.fc(x)
-        return x, mask, vec
+        return x, mask
 
 
 def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **kwargs):

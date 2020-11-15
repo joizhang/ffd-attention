@@ -3,6 +3,7 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
+import torch.nn.functional as F
 
 from training import models
 from training.tools.metrics import ProgressMeter, AverageMeter, accuracy, eval_metrics
@@ -77,15 +78,18 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
             images = sample['images'].cuda(args.gpu, non_blocking=True)
             labels = sample['labels'].cuda(args.gpu, non_blocking=True)
             masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+            # masks_input = F.interpolate(masks, size=(16, 16))
+            # masks_input = masks_input.cuda(args.gpu, non_blocking=True)
         else:
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
+            # masks_input = F.interpolate(masks, (16, 16))
 
             # compute output
         outputs = model(images)
         if isinstance(outputs, tuple):
-            labels_pred, mask_output, vec = outputs
+            labels_pred, masks_output = outputs
             loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
-            loss_map = loss_functions['map_loss'](mask_output, masks)
+            loss_map = loss_functions['map_loss'](masks_output, masks)
             loss = loss_classifier + 10. * loss_map
         else:
             labels_pred = outputs
@@ -123,13 +127,16 @@ def validate(val_loader, model, args):
                 images = sample['images'].cuda(args.gpu, non_blocking=True)
                 labels = sample['labels'].cuda(args.gpu, non_blocking=True)
                 masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+                # masks_input = F.interpolate(masks, size=(16, 16))
+                # masks_input = masks_input.cuda(args.gpu, non_blocking=True)
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
+                # masks_input = F.interpolate(masks, (16, 16))
 
             # compute output
             outputs = model(images)
             if isinstance(outputs, tuple):
-                labels_pred, masks_pred, vec = outputs
+                labels_pred, masks_output = outputs
             else:
                 labels_pred = outputs
 
@@ -137,7 +144,8 @@ def validate(val_loader, model, args):
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
             if isinstance(outputs, tuple):
-                overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
+                # masks_pred = F.interpolate(masks_pred, size=)
+                overall_acc = eval_metrics(masks.cpu(), masks_output.cpu(), 256)
                 pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time

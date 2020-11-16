@@ -3,7 +3,6 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
-import torch.nn.functional as F
 
 from training import models
 from training.tools.metrics import ProgressMeter, AverageMeter, accuracy, eval_metrics
@@ -78,11 +77,8 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
             images = sample['images'].cuda(args.gpu, non_blocking=True)
             labels = sample['labels'].cuda(args.gpu, non_blocking=True)
             masks = sample['masks'].cuda(args.gpu, non_blocking=True)
-            # masks_input = F.interpolate(masks, size=(16, 16))
-            # masks_input = masks_input.cuda(args.gpu, non_blocking=True)
         else:
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
-            # masks_input = F.interpolate(masks, (16, 16))
 
             # compute output
         outputs = model(images)
@@ -127,11 +123,8 @@ def validate(val_loader, model, args):
                 images = sample['images'].cuda(args.gpu, non_blocking=True)
                 labels = sample['labels'].cuda(args.gpu, non_blocking=True)
                 masks = sample['masks'].cuda(args.gpu, non_blocking=True)
-                # masks_input = F.interpolate(masks, size=(16, 16))
-                # masks_input = masks_input.cuda(args.gpu, non_blocking=True)
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
-                # masks_input = F.interpolate(masks, (16, 16))
 
             # compute output
             outputs = model(images)

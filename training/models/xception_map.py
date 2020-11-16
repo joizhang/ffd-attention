@@ -139,13 +139,14 @@ class XceptionMap(Xception):
 
     def forward(self, x):
         x, mask = self.forward_features(x)
-        if self.use_decoder:
-            mask = self.decoder(mask)
         x = self.global_pool(x).flatten(1)
         if self.drop_rate:
             F.dropout(x, self.drop_rate, training=self.training)
         x = self.fc(x)
-        return x, mask
+        if self.use_decoder:
+            mask = self.decoder(mask)
+            return x, mask
+        return x
 
 
 def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **kwargs):

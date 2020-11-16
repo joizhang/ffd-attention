@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import time
 
 import numpy as np
@@ -9,6 +10,8 @@ from torch.backends import cudnn
 
 from training import models
 from training.datasets.dffd_dataset import get_dffd_dataloader
+from training.datasets.face_forensics_dataset import get_face_forensics_test_dataloader
+from training.tools.metrics import eval_metrics
 from training.tools.model_utils import AverageMeter, ProgressMeter, accuracy
 from training.tools.train_utils import parse_args
 
@@ -24,6 +27,7 @@ def test(test_loader, model, args):
 
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
+    pw_acc = AverageMeter('Pixel-wise Acc', ':6.2f')
     progress = ProgressMeter(len(test_loader), [batch_time, top1], prefix='Test: ')
 
     model.eval()
@@ -37,7 +41,7 @@ def test(test_loader, model, args):
             # compute output
             outputs = model(images)
             if isinstance(outputs, tuple):
-                labels_pred, mask_output, vec = outputs
+                labels_pred, masks_pred = outputs
             else:
                 labels_pred = outputs
 
@@ -50,6 +54,9 @@ def test(test_loader, model, args):
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
+            if isinstance(outputs, tuple):
+                overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
+                pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -119,15 +126,19 @@ def main():
         print("Loading checkpoint '{}'".format(args.resume))
         model = models.__dict__[args.arch](pretrained=False)
         model.cuda()
-        checkpoint = torch.load(args.resume)
-        model.load_state_dict(checkpoint['state_dict'])
+        checkpoint = torch.load(args.resume, map_location="cpu")
+        state_dict = checkpoint.get("state_dict", checkpoint)
+        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=False)
 
         print("Initializing Data Loader")
-        test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
+        if args.prefix == 'ff++':
+            test_loader = get_face_forensics_test_dataloader(model, args)
+        else:
+            test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
 
         print("Start Testing")
         test(test_loader, model, args)
-    else:
+
         show_metrics(args)
 
 

@@ -86,25 +86,6 @@ class XceptionMap(Xception):
         super(XceptionMap, self).__init__(num_classes=num_classes, in_chans=in_chans)
 
         self.mask_attn = attn_type()
-        self.use_decoder = kwargs.pop('use_decoder', False)
-
-        if self.use_decoder:
-            self.decoder = nn.Sequential(
-                nn.ConvTranspose2d(1, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
-                nn.BatchNorm2d(16),
-                nn.ReLU(),
-                nn.ConvTranspose2d(16, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
-                nn.BatchNorm2d(16),
-                nn.ReLU(),
-                nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
-                nn.BatchNorm2d(8),
-                nn.ReLU(),
-                nn.ConvTranspose2d(8, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
-                nn.BatchNorm2d(8),
-                nn.ReLU(),
-                nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1, output_padding=0),
-                nn.Softmax(dim=1)
-            )
 
     def forward_features(self, x):
         # Entry flow
@@ -143,10 +124,7 @@ class XceptionMap(Xception):
         if self.drop_rate:
             F.dropout(x, self.drop_rate, training=self.training)
         x = self.fc(x)
-        if self.use_decoder:
-            mask = self.decoder(mask)
-            return x, mask
-        return x
+        return x, mask
 
 
 def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **kwargs):

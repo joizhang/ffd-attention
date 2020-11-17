@@ -56,7 +56,7 @@ class FaceForensicsDataset(Dataset):
 
 def get_face_forensics_dataloader(model, args):
     train_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_train.csv')
-    # train_df = train_df.iloc[:100]
+    train_df = train_df.iloc[:100]
     train_transform = create_train_transform(model.default_cfg)
     train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:
@@ -67,7 +67,7 @@ def get_face_forensics_dataloader(model, args):
                               sampler=train_sampler, num_workers=args.workers, pin_memory=True, drop_last=True)
 
     val_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_val.csv')
-    # val_df = val_df.iloc[:100]
+    val_df = val_df.iloc[:100]
     val_transform = create_val_test_transform(model.default_cfg)
     val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform)
     val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
@@ -78,7 +78,7 @@ def get_face_forensics_dataloader(model, args):
 
 def get_face_forensics_test_dataloader(model, args):
     test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_test.csv')
-    # test_df = test_df.iloc[:57265]
+    # test_df = test_df.iloc[:100]
     test_transform = create_val_test_transform(model.default_cfg)
     test_data = FaceForensicsDataset(data_root=args.data_dir, df=test_df, mode='test', transform=test_transform)
     test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,

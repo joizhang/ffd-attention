@@ -63,7 +63,7 @@ def parse_args():
     return args
 
 
-def train(train_loader, model, optimizer, loss_functions, epoch, args):
+def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -81,15 +81,12 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
             # compute output
-        outputs = model(images)
-        if isinstance(outputs, tuple):
-            labels_pred, masks_output = outputs
-            loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
-            loss_map = loss_functions['map_loss'](masks_output, masks)
-            loss = loss_classifier + 10. * loss_map
-        else:
-            labels_pred = outputs
-            loss = loss_functions['classifier_loss'](labels_pred, labels)
+        labels_pred, masks_output = model(images)
+        masks_output = decoder(masks_output)
+
+        loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
+        loss_map = loss_functions['map_loss'](masks_output, masks)
+        loss = loss_classifier + 10. * loss_map
 
         # measure accuracy and record loss
         acc1, = accuracy(labels_pred, labels)
@@ -97,9 +94,11 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
         top1.update(acc1[0], images.size(0))
 
         # compute gradient and do Adam step
-        optimizer.zero_grad()
+        optimizer['optimizer_encoder'].zero_grad()
+        optimizer['optimizer_decoder'].zero_grad()
         loss.backward()
-        optimizer.step()
+        optimizer['optimizer_decoder'].step()
+        optimizer['optimizer_encoder'].step()
 
         batch_time.update(time.time() - end)
         end = time.time()
@@ -108,7 +107,7 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
             progress.display(batch_idx + 1)
 
 
-def validate(val_loader, model, args):
+def validate(val_loader, model, decoder, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     pw_acc = AverageMeter('Pixel-wise Acc', ':6.2f')

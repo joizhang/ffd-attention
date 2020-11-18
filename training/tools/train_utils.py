@@ -123,8 +123,8 @@ def validate(val_loader, model, args):
                 images = sample['images'].cuda(args.gpu, non_blocking=True)
                 labels = sample['labels'].cuda(args.gpu, non_blocking=True)
                 masks = sample['masks']
-                masks_down = F.max_pool2d(masks, 16)
-                masks_down = masks_down.cuda(args.gpu, non_blocking=True)
+                # masks_down = F.max_pool2d(masks, 16)
+                # masks_down = masks_down.cuda(args.gpu, non_blocking=True)
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
@@ -134,7 +134,9 @@ def validate(val_loader, model, args):
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
+            # pixel-wise acc
             masks_pred = F.interpolate(masks_pred, scale_factor=16)
+            masks_pred = torch.argmax(masks_pred, dim=1)
             overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 

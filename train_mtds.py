@@ -84,7 +84,6 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
         loss_rect_meter.update(loss_rect.item(), images.size(0))
 
         loss_total = loss_act + loss_seg + loss_rect
-        loss_total.backward()
 
         # measure accuracy and record loss
         labels_pred = torch.stack((zero, one), dim=1)

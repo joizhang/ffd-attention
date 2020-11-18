@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, auc, roc_curve
 from torch.backends import cudnn
 
@@ -35,15 +36,11 @@ def test(test_loader, model, args):
     with torch.no_grad():
         end = time.time()
         for batch_idx, sample in enumerate(test_loader):
-            images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks'].cuda()
+            images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks']
             y_true.extend(labels.tolist())
 
             # compute output
-            outputs = model(images)
-            if isinstance(outputs, tuple):
-                labels_pred, masks_pred = outputs
-            else:
-                labels_pred = outputs
+            labels_pred, masks_pred = model(images)
 
             pred = torch.argmax(labels_pred, dim=1)
             y_pred.extend(pred.tolist())
@@ -54,16 +51,19 @@ def test(test_loader, model, args):
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
-            if isinstance(outputs, tuple):
-                overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
-                pw_acc.update(overall_acc, images.size(0))
+            # pixel-wise acc
+            masks_pred = F.interpolate(masks_pred, scale_factor=16)
+            # masks_pred = torch.argmax(masks_pred, dim=1)
+            overall_acc = eval_metrics(masks, masks_pred.cpu(), 256)
+            pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if batch_idx % args.print_freq == 0:
-                progress.display(batch_idx)
+            if (batch_idx + 1) % args.print_freq == 0 or (batch_idx + 1) == len(test_loader):
+                progress.display(batch_idx + 1)
+
     pickle.dump([y_true, y_pred, y_score], open(PICKLE_FILE.format(args.arch), "wb"))
     return top1.avg
 

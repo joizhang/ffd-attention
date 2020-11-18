@@ -136,16 +136,16 @@ def validate(val_loader, model, args):
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
             masks_pred = F.interpolate(masks_pred, scale_factor=16)
-            masks_pred = torch.argmax(masks_pred, dim=1)
-            overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 2)
+            # masks_pred = torch.argmax(masks_pred, dim=1)
+            overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if batch_idx % args.print_freq == 0:
-                progress.display(batch_idx)
+            if (batch_idx + 1) % args.print_freq == 0:
+                progress.display(batch_idx + 1)
 
     return top1.avg
 

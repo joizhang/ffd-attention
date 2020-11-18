@@ -11,6 +11,8 @@ from torch import nn
 
 from training.models.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
+__all__ = ['encoder', 'Decoder', 'ActivationLoss', 'ReconstructionLoss', 'SegmentationLoss']
+
 default_cfgs = {
     'xception': {
         'url': '',
@@ -197,7 +199,7 @@ class SegmentationLoss(nn.Module):
                          groundtruth.data.view(groundtruth.shape[0], groundtruth.shape[2] * groundtruth.shape[3]))
 
 
-def build_encoder():
+def encoder():
     default_cfg = default_cfgs['xception']
     model = Encoder()
     model.default_cfg = default_cfg

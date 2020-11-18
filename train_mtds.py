@@ -13,7 +13,7 @@ from torch.backends import cudnn
 from config import Config
 from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
-from training.models.ae import Decoder, build_encoder, ActivationLoss, ReconstructionLoss, SegmentationLoss
+from training.models.ae import Decoder, encoder, ActivationLoss, ReconstructionLoss, SegmentationLoss
 from training.tools.metrics import AverageMeter, ProgressMeter, accuracy, eval_metrics
 from training.tools.train_utils import parse_args
 
@@ -121,20 +121,43 @@ def validate(val_loader, model, decoder, args):
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
+            masks[masks >= 0.5] = 1.0
+            masks[masks < 0.5] = 0.0
+            masks = masks.long()
+
             # compute output
-            outputs = model(images)
-            if isinstance(outputs, tuple):
-                labels_pred, masks_output = outputs
-            else:
-                labels_pred = outputs
+            latent = model(images).reshape(-1, 2, 64, 16, 16)
+            zero_abs = torch.abs(latent[:, 0]).view(latent.shape[0], -1)
+            zero = zero_abs.mean(dim=1)
+
+            one_abs = torch.abs(latent[:, 1]).view(latent.shape[0], -1)
+            one = one_abs.mean(dim=1)
+
+            y = torch.eye(2)
+            if args.gpu >= 0:
+                y = y.cuda(args.gpu)
+
+            y = y.index_select(dim=0, index=labels.data.long())
+
+            latent = (latent * y[:, :, None, None, None]).reshape(-1, 128, 16, 16)
+
+            seg, rect = decoder(latent)
 
             # measure accuracy and record loss
+            labels_pred = torch.stack((zero, one), dim=1)
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
-            if isinstance(outputs, tuple):
-                # masks_pred = F.interpolate(masks_pred, size=)
-                overall_acc = eval_metrics(masks.cpu(), masks_output.cpu(), 256)
-                pw_acc.update(overall_acc, images.size(0))
+
+            seg = torch.argmax(seg, dim=1)
+            overall_acc = eval_metrics(masks.cpu(), seg.cpu(), 2)
+            pw_acc.update(overall_acc, images.size(0))
+
+            # acc1, = accuracy(labels_pred, labels)
+            # top1.update(acc1[0], images.size(0))
+            # if isinstance(outputs, tuple):
+            #     # masks_pred = F.interpolate(masks_pred, size=)
+            #     overall_acc = eval_metrics(masks.cpu(), masks_output.cpu(), 256)
+            #     pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -163,7 +186,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                 world_size=args.world_size, rank=args.rank)
 
     print("Initializing Networks")
-    model = build_encoder()
+    model = encoder()
     decoder = Decoder()
 
     print("Initializing Data Loader")

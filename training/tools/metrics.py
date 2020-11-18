@@ -119,11 +119,11 @@ def nanmean(x):
 
 
 def _fast_hist(gt, pred, num_classes):
-    mask = (gt >= 0) & (gt < num_classes)
-    # mask2 = (pred >= 0) & (pred < num_classes)
-    # true = true.to(torch.int32)
-    # pred = pred.to(torch.int32)
-    label = num_classes * gt[mask].type(torch.int32) + pred[mask]
+    # mask = (gt >= 0) & (gt < num_classes)
+    mask2 = (pred >= 0) & (pred < num_classes)
+    gt = gt.to(torch.int32)
+    pred = pred.to(torch.int32)
+    label = num_classes * gt[mask2].type(torch.int32) + pred[mask2]
     hist = torch.bincount(label, minlength=num_classes ** 2, )
     hist = hist.reshape(num_classes, num_classes).float()
     return hist
@@ -210,8 +210,8 @@ def eval_metrics(true, pred, num_classes):
         avg_jacc: the jaccard index.
         avg_dice: the dice coefficient.
     """
-    # true = true * 255.
-    # pred = pred * 255.
+    true = true * 255.
+    pred = pred * 255.
     hist = torch.zeros((num_classes, num_classes))
     for t, p in zip(true, pred):
         hist += _fast_hist(t.flatten(), p.flatten(), num_classes)

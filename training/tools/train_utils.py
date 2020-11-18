@@ -137,7 +137,7 @@ def validate(val_loader, model, args):
             # pixel-wise acc
             masks_pred = F.interpolate(masks_pred, scale_factor=16)
             masks_pred = torch.argmax(masks_pred, dim=1)
-            overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
+            overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 2)
             pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time

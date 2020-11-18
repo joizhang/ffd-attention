@@ -116,7 +116,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         is_main_node = not args.multiprocessing_distributed or (
                 args.multiprocessing_distributed and args.rank % ngpus_per_node == 0)
-        save_model = (better_acc or (epoch == args.epochs) or (epoch % 5 == 0)) and is_main_node
+        save_model = (better_acc or epoch == args.epochs or epoch % 5 == 0) and is_main_node
         if save_model:
             print('Save model')
             torch.save({

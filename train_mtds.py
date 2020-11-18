@@ -117,7 +117,7 @@ def validate(val_loader, model, decoder, args):
             if args.gpu is not None:
                 images = sample['images'].cuda(args.gpu, non_blocking=True)
                 labels = sample['labels'].cuda(args.gpu, non_blocking=True)
-                masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+                masks = sample['masks']
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
@@ -149,22 +149,15 @@ def validate(val_loader, model, decoder, args):
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
             seg = torch.argmax(seg, dim=1)
-            overall_acc = eval_metrics(masks.cpu(), seg.cpu(), 2)
+            overall_acc = eval_metrics(masks, seg.cpu(), 2)
             pw_acc.update(overall_acc, images.size(0))
-
-            # acc1, = accuracy(labels_pred, labels)
-            # top1.update(acc1[0], images.size(0))
-            # if isinstance(outputs, tuple):
-            #     # masks_pred = F.interpolate(masks_pred, size=)
-            #     overall_acc = eval_metrics(masks.cpu(), masks_output.cpu(), 256)
-            #     pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if batch_idx % args.print_freq == 0:
-                progress.display(batch_idx)
+            if (batch_idx + 1) % args.print_freq == 0:
+                progress.display(batch_idx + 1)
 
     return top1.avg
 
@@ -190,11 +183,7 @@ def main_worker(gpu, ngpus_per_node, args):
     decoder = Decoder()
 
     print("Initializing Data Loader")
-    if args.prefix == 'dffd':
-        train_sampler, train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
-        val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
-    else:
-        train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args)
+    train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args)
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():
@@ -269,7 +258,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         is_main_node = not args.multiprocessing_distributed or (
                 args.multiprocessing_distributed and args.rank % ngpus_per_node == 0)
-        save_model = (better_acc or (epoch == args.epochs) or (epoch % 5 == 0)) and is_main_node
+        save_model = (better_acc or epoch == args.epochs or epoch % 5 == 0) and is_main_node
         if save_model:
             print('Save model')
             torch.save({
@@ -320,4 +309,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # Notice: Multi-task detection and segmentation can only trained on single gpu!!!
     main()

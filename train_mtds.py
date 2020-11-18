@@ -275,7 +275,8 @@ def main_worker(gpu, ngpus_per_node, args):
             torch.save({
                 'epoch': epoch,
                 'arch': args.arch,
-                'state_dict': model.state_dict(),
+                'encoder_state_dict': model.state_dict(),
+                'decoder_state_dict': decoder.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer_encoder': optimizer['optimizer_encoder'].state_dict(),
                 'optimizer_decoder': optimizer['optimizer_decoder'].state_dict(),

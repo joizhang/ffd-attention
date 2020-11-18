@@ -29,7 +29,7 @@ def test(test_loader, model, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     pw_acc = AverageMeter('Pixel-wise Acc', ':6.2f')
-    progress = ProgressMeter(len(test_loader), [batch_time, top1], prefix='Test: ')
+    progress = ProgressMeter(len(test_loader), [batch_time, top1, pw_acc], prefix='Test: ')
 
     model.eval()
 

@@ -1,6 +1,6 @@
 ## ffd-attention
 
-More experiments about fake face detection by attention mechanism
+More experiments about fake face detection with attention mechanism
 
 ## Preprocessing
 

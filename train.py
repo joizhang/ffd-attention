@@ -14,7 +14,6 @@ from config import Config
 from training import models
 from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
-from training.models.decoder import build_decoder
 from training.tools.train_utils import parse_args, train, validate
 
 torch.backends.cudnn.benchmark = True
@@ -41,7 +40,6 @@ def main_worker(gpu, ngpus_per_node, args):
 
     print("Initializing Networks")
     model = models.__dict__[args.arch](pretrained=True)
-    decoder = build_decoder()
 
     print("Initializing Data Loader")
     if args.prefix == 'dffd':
@@ -75,8 +73,6 @@ def main_worker(gpu, ngpus_per_node, args):
     elif args.gpu is not None:
         torch.cuda.set_device(args.gpu)
         model = model.cuda(args.gpu)
-        # Only in single gpu
-        decoder = decoder.cuda(args.gpu)
     else:
         model = torch.nn.DataParallel(model).cuda()
 
@@ -100,13 +96,10 @@ def main_worker(gpu, ngpus_per_node, args):
         "classifier_loss": nn.CrossEntropyLoss().cuda(),
         "map_loss": nn.L1Loss().cuda()
     }
-    optimizer = {
-        'optimizer_encoder': optim.Adam(model.parameters(), args.lr),
-        'optimizer_decoder': optim.Adam(decoder.parameters(), args.lr),
-    }
+    optimizer = optim.Adam(model.parameters(), args.lr)
 
     if args.evaluate:
-        validate(val_loader, model, decoder, args)
+        validate(val_loader, model, args)
         return
 
     print("Start Training")
@@ -114,10 +107,10 @@ def main_worker(gpu, ngpus_per_node, args):
     for epoch in range(start_epoch, args.epochs + 1):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train(train_loader, model, decoder, optimizer, loss_functions, epoch, args)
+        train(train_loader, model, optimizer, loss_functions, epoch, args)
 
         if epoch % 2 == 0 or epoch == args.epochs:
-            acc1 = validate(val_loader, model, decoder, args)
+            acc1 = validate(val_loader, model, args)
             better_acc = best_acc1 < acc1
             best_acc1 = max(acc1, best_acc1)
 
@@ -131,8 +124,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
-                'optimizer_encoder': optimizer['optimizer_encoder'].state_dict(),
-                'optimizer_decoder': optimizer['optimizer_decoder'].state_dict(),
+                'optimizer': optimizer.state_dict(),
             }, os.path.join('weights', '{}_{}.pt'.format(args.arch, args.prefix)))
         better_acc = False
 

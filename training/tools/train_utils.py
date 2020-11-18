@@ -3,6 +3,7 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
+import torch.nn.functional as F
 
 from training import models
 from training.tools.metrics import ProgressMeter, AverageMeter, accuracy, eval_metrics
@@ -63,7 +64,7 @@ def parse_args():
     return args
 
 
-def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
+def train(train_loader, model, optimizer, loss_functions, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -76,16 +77,18 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
         if args.gpu is not None:
             images = sample['images'].cuda(args.gpu, non_blocking=True)
             labels = sample['labels'].cuda(args.gpu, non_blocking=True)
-            masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+            masks = sample['masks']
+            masks_down = F.avg_pool2d(masks, 16)
+            masks_down = masks_down.cuda(args.gpu, non_blocking=True)
         else:
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
+            masks_down = F.avg_pool2d(masks, 16)
 
-            # compute output
+        # compute output
         labels_pred, masks_output = model(images)
-        masks_output = decoder(masks_output)
 
         loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
-        loss_map = loss_functions['map_loss'](masks_output, masks)
+        loss_map = loss_functions['map_loss'](masks_output, masks_down)
         loss = loss_classifier + 10. * loss_map
 
         # measure accuracy and record loss
@@ -94,11 +97,9 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
         top1.update(acc1[0], images.size(0))
 
         # compute gradient and do Adam step
-        optimizer['optimizer_encoder'].zero_grad()
-        optimizer['optimizer_decoder'].zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        optimizer['optimizer_decoder'].step()
-        optimizer['optimizer_encoder'].step()
+        optimizer.step()
 
         batch_time.update(time.time() - end)
         end = time.time()
@@ -107,7 +108,7 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
             progress.display(batch_idx + 1)
 
 
-def validate(val_loader, model, decoder, args):
+def validate(val_loader, model, args):
     batch_time = AverageMeter('Time', ':6.3f')
     top1 = AverageMeter('Acc@1', ':6.2f')
     pw_acc = AverageMeter('Pixel-wise Acc', ':6.2f')
@@ -121,24 +122,21 @@ def validate(val_loader, model, decoder, args):
             if args.gpu is not None:
                 images = sample['images'].cuda(args.gpu, non_blocking=True)
                 labels = sample['labels'].cuda(args.gpu, non_blocking=True)
-                masks = sample['masks'].cuda(args.gpu, non_blocking=True)
+                masks = sample['masks']
+                masks_down = F.max_pool2d(masks, 16)
+                masks_down = masks_down.cuda(args.gpu, non_blocking=True)
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
             # compute output
-            outputs = model(images)
-            if isinstance(outputs, tuple):
-                labels_pred, masks_output = outputs
-            else:
-                labels_pred = outputs
+            labels_pred, masks_pred = model(images)
 
             # measure accuracy and record loss
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
-            if isinstance(outputs, tuple):
-                # masks_pred = F.interpolate(masks_pred, size=)
-                overall_acc = eval_metrics(masks.cpu(), masks_output.cpu(), 256)
-                pw_acc.update(overall_acc, images.size(0))
+            masks_pred = F.interpolate(masks_pred, scale_factor=16)
+            overall_acc = eval_metrics(masks.cpu(), masks_pred.cpu(), 256)
+            pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)

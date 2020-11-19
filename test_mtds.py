@@ -5,13 +5,13 @@ import time
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, auc, roc_curve
 from torch.backends import cudnn
 
 from training import models
 from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.datasets.face_forensics_dataset import get_face_forensics_test_dataloader
+from training.models import encoder, Decoder
 from training.tools.metrics import eval_metrics
 from training.tools.model_utils import AverageMeter, ProgressMeter, accuracy
 from training.tools.train_utils import parse_args
@@ -21,7 +21,7 @@ torch.backends.cudnn.benchmark = True
 PICKLE_FILE = "plot/{}.pickle"
 
 
-def test(test_loader, model, args):
+def test(test_loader, model, decoder, args):
     y_true = []
     y_pred = []
     y_score = []
@@ -39,9 +39,29 @@ def test(test_loader, model, args):
             images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks']
             y_true.extend(labels.tolist())
 
-            # compute output
-            labels_pred, masks_pred = model(images)
+            masks[masks >= 0.5] = 1.0
+            masks[masks < 0.5] = 0.0
+            masks = masks.long()
 
+            # compute output
+            latent = model(images).reshape(-1, 2, 64, 16, 16)
+            zero_abs = torch.abs(latent[:, 0]).view(latent.shape[0], -1)
+            zero = zero_abs.mean(dim=1)
+
+            one_abs = torch.abs(latent[:, 1]).view(latent.shape[0], -1)
+            one = one_abs.mean(dim=1)
+
+            y = torch.eye(2)
+            if args.gpu >= 0:
+                y = y.cuda(args.gpu)
+
+            y = y.index_select(dim=0, index=labels.data.long())
+
+            latent = (latent * y[:, :, None, None, None]).reshape(-1, 128, 16, 16)
+
+            seg, rect = decoder(latent)
+
+            labels_pred = torch.stack((zero, one), dim=1)
             pred = torch.argmax(labels_pred, dim=1)
             y_pred.extend(pred.tolist())
             score = torch.nn.functional.softmax(labels_pred, dim=1)
@@ -52,9 +72,9 @@ def test(test_loader, model, args):
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
-            masks_pred = F.interpolate(masks_pred, scale_factor=16)
+            seg = torch.argmax(seg, dim=1)
             # masks_pred = torch.argmax(masks_pred, dim=1)
-            overall_acc = eval_metrics(masks, masks_pred.cpu(), 256)
+            overall_acc = eval_metrics(masks, seg.cpu(), 2)
             pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time
@@ -124,11 +144,16 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
 
         print("Loading checkpoint '{}'".format(args.resume))
-        model = models.__dict__[args.arch](pretrained=False)
+        # model = models.__dict__[args.arch](pretrained=False)
+        model = encoder()
+        decoder = Decoder()
         model.cuda()
+        decoder.cuda()
         checkpoint = torch.load(args.resume, map_location="cpu")
-        state_dict = checkpoint.get("state_dict", checkpoint)
-        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=False)
+        encoder_state_dict = checkpoint.get("encoder_state_dict", checkpoint)
+        model.load_state_dict(encoder_state_dict, strict=True)
+        decoder_state_dict = checkpoint.get("decoder_state_dict", checkpoint)
+        decoder.load_state_dict(decoder_state_dict, strict=True)
 
         print("Initializing Data Loader")
         if args.prefix == 'ff++':
@@ -137,7 +162,7 @@ def main():
             test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
 
         print("Start Testing")
-        test(test_loader, model, args)
+        test(test_loader, model, decoder, args)
 
         show_metrics(args)
 

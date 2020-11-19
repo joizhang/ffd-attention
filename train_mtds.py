@@ -268,7 +268,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'best_acc1': best_acc1,
                 'optimizer_encoder': optimizer['optimizer_encoder'].state_dict(),
                 'optimizer_decoder': optimizer['optimizer_decoder'].state_dict(),
-            }, os.path.join('weights', '{}_{}.pt'.format(args.arch, args.prefix)))
+            }, os.path.join('weights', '{}_{}_{}.pt'.format(args.arch, args.prefix, epoch)))
         better_acc = False
 
 

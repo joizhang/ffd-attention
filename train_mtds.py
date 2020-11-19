@@ -11,7 +11,6 @@ from torch import hub, optim
 from torch.backends import cudnn
 
 from config import Config
-from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
 from training.models.ae import Decoder, encoder, ActivationLoss, ReconstructionLoss, SegmentationLoss
 from training.tools.metrics import AverageMeter, ProgressMeter, accuracy, eval_metrics
@@ -121,9 +120,9 @@ def validate(val_loader, model, decoder, args):
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
-            masks[masks >= 0.5] = 1.0
-            masks[masks < 0.5] = 0.0
-            masks = masks.long()
+            # masks[masks >= 0.5] = 1.0
+            # masks[masks < 0.5] = 0.0
+            # masks = masks.long()
 
             # compute output
             latent = model(images).reshape(-1, 2, 64, 16, 16)
@@ -149,7 +148,7 @@ def validate(val_loader, model, decoder, args):
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
             seg = torch.argmax(seg, dim=1)
-            overall_acc = eval_metrics(masks, seg.cpu(), 2)
+            overall_acc = eval_metrics(masks, seg.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time

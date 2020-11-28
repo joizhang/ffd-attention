@@ -39,9 +39,9 @@ def test(test_loader, model, decoder, args):
             images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks']
             y_true.extend(labels.tolist())
 
-            masks[masks >= 0.5] = 1.0
-            masks[masks < 0.5] = 0.0
-            masks = masks.long()
+            # masks[masks >= 0.5] = 1.0
+            # masks[masks < 0.5] = 0.0
+            # masks = masks.long()
 
             # compute output
             latent = model(images).reshape(-1, 2, 64, 16, 16)
@@ -74,7 +74,7 @@ def test(test_loader, model, decoder, args):
             # pixel-wise acc
             seg = torch.argmax(seg, dim=1)
             # masks_pred = torch.argmax(masks_pred, dim=1)
-            overall_acc = eval_metrics(masks, seg.cpu(), 2)
+            overall_acc = eval_metrics(masks, seg.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 
             # measure elapsed time

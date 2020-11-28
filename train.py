@@ -103,6 +103,8 @@ def main_worker(gpu, ngpus_per_node, args):
         return
 
     print("Start Training")
+    is_main_node = not args.multiprocessing_distributed or (
+            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0)
     better_acc = False
     for epoch in range(start_epoch, args.epochs + 1):
         if args.distributed:
@@ -114,9 +116,7 @@ def main_worker(gpu, ngpus_per_node, args):
             better_acc = best_acc1 < acc1
             best_acc1 = max(acc1, best_acc1)
 
-        is_main_node = not args.multiprocessing_distributed or (
-                args.multiprocessing_distributed and args.rank % ngpus_per_node == 0)
-        save_model = (better_acc or epoch == args.epochs or epoch % 5 == 0) and is_main_node
+        save_model = better_acc and is_main_node
         if save_model:
             print('Save model')
             torch.save({

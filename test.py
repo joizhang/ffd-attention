@@ -120,8 +120,8 @@ def main():
 
     if args.resume:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
-        torch.manual_seed(args.seed)
-        torch.cuda.manual_seed_all(args.seed)
+        # torch.manual_seed(args.seed)
+        # torch.cuda.manual_seed_all(args.seed)
 
         print("Loading checkpoint '{}'".format(args.resume))
         model = models.__dict__[args.arch](pretrained=False)

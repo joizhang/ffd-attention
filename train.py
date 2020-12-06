@@ -125,7 +125,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict(),
-            }, os.path.join('weights', '{}_{}.pt'.format(args.arch, args.prefix)))
+            }, os.path.join('weights', '{}_{}_{}.pt'.format(args.arch, args.prefix, epoch)))
         better_acc = False
 
 

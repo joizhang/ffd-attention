@@ -197,10 +197,10 @@ def dice_coefficient(hist):
     return avg_dice
 
 
-def eval_metrics(true, pred, num_classes):
+def eval_metrics(gt, pred, num_classes):
     """Computes various segmentation metrics on 2D feature maps.
     Args:
-        true: a tensor of shape [B, H, W] or [B, 1, H, W].
+        gt: a tensor of shape [B, H, W] or [B, 1, H, W].
         pred: a tensor of shape [B, H, W] or [B, 1, H, W].
         num_classes: the number of classes to segment. This number
             should be less than the ID of the ignored class.
@@ -210,10 +210,10 @@ def eval_metrics(true, pred, num_classes):
         avg_jacc: the jaccard index.
         avg_dice: the dice coefficient.
     """
-    true = true * 255.
+    gt = gt * 255.
     pred = pred * 255.
     hist = torch.zeros((num_classes, num_classes))
-    for t, p in zip(true, pred):
+    for t, p in zip(gt, pred):
         hist += _fast_hist(t.flatten(), p.flatten(), num_classes)
     overall_acc = overall_pixel_accuracy(hist)
     # avg_per_class_acc = per_class_pixel_accuracy(hist)

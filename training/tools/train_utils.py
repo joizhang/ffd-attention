@@ -1,7 +1,6 @@
 import argparse
 import time
 
-import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 
@@ -30,17 +29,12 @@ def parse_args():
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    # parser.add_argument('--signature', default=str(datetime.datetime.now()))
     parser.add_argument('--print-freq', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
     parser.add_argument('--evaluate', dest='evaluate', action='store_true',
                         help='evaluate model on validation set')
-    # parser.add_argument('--save_dir', default='./runs', help='directory for result')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
-    # parser.add_argument('--folds-csv', type=str, default='folds.csv')
-    # parser.add_argument('--localization', dest='localization', action='store_true',
-    #                     help='Manipulation Localization')
 
     parser.add_argument('--world-size', default=-1, type=int,
                         help='number of nodes for distributed training')
@@ -50,7 +44,7 @@ def parse_args():
                         help='url used to set up distributed training')
     parser.add_argument('--dist-backend', default='nccl', type=str,
                         help='distributed backend')
-    parser.add_argument('--seed', default=111, type=int,
+    parser.add_argument('--seed', default=None, type=int,
                         help='seed for initializing training. ')
     parser.add_argument('--gpu', default=None, type=int,
                         help='GPU id to use.')
@@ -89,7 +83,7 @@ def train(train_loader, model, optimizer, loss_functions, epoch, args):
 
         loss_classifier = loss_functions['classifier_loss'](labels_pred, labels)
         loss_map = loss_functions['map_loss'](masks_output, masks_down)
-        loss = loss_classifier + 10. * loss_map
+        loss = loss_classifier + 100. * loss_map
 
         # measure accuracy and record loss
         acc1, = accuracy(labels_pred, labels)
@@ -148,27 +142,3 @@ def validate(val_loader, model, args):
                 progress.display(batch_idx + 1)
 
     return top1.avg
-
-
-def write_tfboard(writer, vals, itr, name):
-    for idx, item in enumerate(vals):
-        writer.add_scalar('data/%s%d' % (name, idx), item, itr)
-
-
-def plot_image(data):
-    plt.figure(figsize=(10, 5))
-    for i in range(len(data)):
-        image, label = data[i]
-        print(i, image.size)
-        plt.subplot(1, 5, i + 1)
-        # plt.tight_layout()
-        plt.title('Label {}'.format(label))
-        plt.axis('off')
-        plt.imshow(image)
-        if i == 4:
-            plt.show()
-            break
-
-
-if __name__ == '__main__':
-    print(models.__dict__['vgg16'])

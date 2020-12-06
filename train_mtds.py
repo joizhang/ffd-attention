@@ -46,9 +46,9 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
         else:
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
-        # masks[masks >= 0.5] = 1.0
-        # masks[masks < 0.5] = 0.0
-        # masks = masks.long()
+        masks[masks >= 0.1] = 1.0
+        masks[masks < 0.1] = 0.0
+        masks = masks.long()
 
         # compute output
         latent = model(images).reshape(-1, 2, 64, 16, 16)
@@ -120,8 +120,8 @@ def validate(val_loader, model, decoder, args):
             else:
                 images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
-            # masks[masks >= 0.5] = 1.0
-            # masks[masks < 0.5] = 0.0
+            # masks[masks >= 0.1] = 1.0
+            # masks[masks < 0.1] = 0.0
             # masks = masks.long()
 
             # compute output
@@ -147,7 +147,7 @@ def validate(val_loader, model, decoder, args):
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
-            # seg = torch.argmax(seg, dim=1)
+            seg = torch.argmax(seg, dim=1)
             overall_acc = eval_metrics(masks, seg.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 

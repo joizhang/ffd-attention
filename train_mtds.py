@@ -182,7 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
     decoder = Decoder()
 
     print("Initializing Data Loader")
-    train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args)
+    train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args, fake_type="FaceShifter")
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():

@@ -1,5 +1,6 @@
 import os
 
+import albumentations as A
 import cv2
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ FACE_FORENSICS = 'ff++'
 
 class FaceForensicsDataset(Dataset):
 
-    def __init__(self, data_root, df: DataFrame, mode, transform=None, fake_type="Deepfakes"):
+    def __init__(self, data_root, df: DataFrame, mode, transform: A.Compose, fake_type: str):
         """
         Args:
             fake_type(str): Deepfakes, Face2Face, FaceShifter, FaceSwap, NeuralTextures
@@ -54,11 +55,18 @@ class FaceForensicsDataset(Dataset):
         return r
 
 
-def get_face_forensics_dataloader(model, args):
-    train_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_train.csv')
+def get_face_forensics_dataloader(model, args, fake_type="Deepfakes"):
+    """
+    :param model:
+    :param args:
+    :param fake_type: Deepfakes, FaceShifter
+    :return:
+    """
+    train_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_train.csv')
     # train_df = train_df.iloc[:100]
     train_transform = create_train_transform(model.default_cfg)
-    train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
+    train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform,
+                                      fake_type=fake_type)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
     else:
@@ -66,10 +74,11 @@ def get_face_forensics_dataloader(model, args):
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=(train_sampler is None),
                               sampler=train_sampler, num_workers=args.workers, pin_memory=True, drop_last=True)
 
-    val_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_val.csv')
+    val_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_val.csv')
     # val_df = val_df.iloc[:100]
     val_transform = create_val_test_transform(model.default_cfg)
-    val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform)
+    val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform,
+                                    fake_type=fake_type)
     val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
                             pin_memory=True, drop_last=False)
 
@@ -77,6 +86,12 @@ def get_face_forensics_dataloader(model, args):
 
 
 def get_face_forensics_test_dataloader(model, args, fake_type="Deepfakes"):
+    """
+    :param model:
+    :param args:
+    :param fake_type: Deepfakes, FaceShifter
+    :return:
+    """
     test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_test.csv')
     # test_df = test_df.iloc[:100]
     test_transform = create_val_test_transform(model.default_cfg)

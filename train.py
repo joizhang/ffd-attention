@@ -111,7 +111,7 @@ def main_worker(gpu, ngpus_per_node, args):
             train_sampler.set_epoch(epoch)
         train(train_loader, model, optimizer, loss_functions, epoch, args)
 
-        if epoch % 2 == 0 or epoch == args.epochs:
+        if epoch % 2 == 0 or epoch == args.epochs and is_main_node:
             acc1 = validate(val_loader, model, args)
             better_acc = best_acc1 < acc1
             best_acc1 = max(acc1, best_acc1)

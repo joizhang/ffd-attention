@@ -65,10 +65,10 @@ def test(test_loader, model, args):
                 progress.display(batch_idx + 1)
 
     pickle.dump([y_true, y_pred, y_score], open(PICKLE_FILE.format(args.arch), "wb"))
-    return top1.avg
+    return pw_acc.avg
 
 
-def show_metrics(args):
+def show_metrics(args, pw_acc):
     with open(PICKLE_FILE.format(args.arch), "rb") as f:
         y_true, y_pred, y_score = pickle.load(f)
     print(len(y_true), len(y_pred), len(y_score))
@@ -110,8 +110,8 @@ def show_metrics(args):
         if fpr[i] > 0.05 and tpr_5_00 == -1:
             tpr_5_00 = tpr[i - 1]
     roc_auc = auc(fpr, tpr)
-    metrics_template = "ACC: {:f} AUC: {:f} EER: {:f} TPR@0.01: {:f} TPR@0.10: {:f} TPR@1.00: {:f}"
-    print(metrics_template.format(acc, roc_auc, eer, tpr_0_01, tpr_0_10, tpr_1_00))
+    metrics_template = "ACC: {:f} AUC: {:f} EER: {:f} PWA: {:f}"
+    print(metrics_template.format(acc, roc_auc, eer, pw_acc))
 
 
 def main():
@@ -137,9 +137,9 @@ def main():
             test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
 
         print("Start Testing")
-        test(test_loader, model, args)
+        pw_acc = test(test_loader, model, args)
 
-        show_metrics(args)
+        show_metrics(args, pw_acc)
 
 
 if __name__ == '__main__':

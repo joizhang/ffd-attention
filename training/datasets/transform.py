@@ -55,10 +55,10 @@ def create_train_transform(model_cfg):
     mean = model_cfg['mean']
     std = model_cfg['std']
     return A.Compose([
-        A.ImageCompression(quality_lower=20, quality_upper=100, p=0.5),
-        A.GaussNoise(p=0.1),
-        A.GaussianBlur(blur_limit=3, p=0.05),
-        A.HorizontalFlip(),
+        # A.ImageCompression(quality_lower=20, quality_upper=100, p=0.5),
+        # A.GaussNoise(p=0.1),
+        # A.GaussianBlur(blur_limit=3, p=0.05),
+        # A.HorizontalFlip(),
         A.OneOf([
             IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
             IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_LINEAR),

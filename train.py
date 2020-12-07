@@ -46,7 +46,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train_sampler, train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
         val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
     else:
-        train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args)
+        train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args, fake_type='FaceShifter')
     # print(next(iter(val_loader)))
 
     print("Initializing Distribution")

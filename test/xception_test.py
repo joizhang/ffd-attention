@@ -13,13 +13,10 @@ from training.models import xception
 from training.tools.model_utils import validate
 from config import Config
 
-torch.backends.cudnn.benchmark = True
-
 CONFIG = Config()
-
 hub.set_dir(CONFIG['TORCH_HOME'])
-
 os.environ["CUDA_VISIBLE_DEVICES"] = CONFIG['CUDA_VISIBLE_DEVICES']
+torch.backends.cudnn.benchmark = True
 
 
 class XceptionTestCase(unittest.TestCase):

@@ -147,7 +147,7 @@ def validate(val_loader, model, decoder, args):
             acc1, = accuracy(labels_pred, labels)
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
-            # seg = torch.argmax(seg, dim=1)
+            seg = torch.argmax(seg, dim=1)
             overall_acc = eval_metrics(masks, seg.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
 

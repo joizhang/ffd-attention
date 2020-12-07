@@ -76,8 +76,8 @@ def get_face_forensics_dataloader(model, args):
     return train_sampler, train_loader, val_loader
 
 
-def get_face_forensics_test_dataloader(model, args):
-    test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_Deepfakes_test.csv')
+def get_face_forensics_test_dataloader(model, args, fake_type="Deepfakes"):
+    test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_test.csv')
     # test_df = test_df.iloc[:100]
     test_transform = create_val_test_transform(model.default_cfg)
     test_data = FaceForensicsDataset(data_root=args.data_dir, df=test_df, mode='test', transform=test_transform)

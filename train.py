@@ -13,8 +13,6 @@ from torch.backends import cudnn
 from config import Config
 from training import models
 from training.datasets import get_dataloader
-from training.datasets.dffd_dataset import get_dffd_dataloader
-from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
 from training.tools.train_utils import parse_args, train, validate
 
 torch.backends.cudnn.benchmark = True

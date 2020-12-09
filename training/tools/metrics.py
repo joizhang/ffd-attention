@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from sklearn import metrics
 
 EPS = 1e-10
 
@@ -67,64 +68,15 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-class Metrics(object):
-
-    def __init__(self, num_class):
-        self.num_class = num_class
-        self.confusion_matrix = np.zeros((self.num_class,) * 2)
-
-    def pixel_accuracy(self):
-        acc = np.diag(self.confusion_matrix).sum() / self.confusion_matrix.sum()
-        return acc
-
-    def pixel_accuracy_class(self):
-        acc = np.diag(self.confusion_matrix) / self.confusion_matrix.sum(axis=1)
-        acc = np.nanmean(acc)
-        return acc
-
-    def mean_intersection_over_union(self):
-        matrix_ = (np.sum(self.confusion_matrix, axis=1) + np.sum(self.confusion_matrix, axis=0) - np.diag(
-            self.confusion_matrix))
-        miou = np.diag(self.confusion_matrix) / matrix_
-        miou = np.nanmean(miou)
-        return miou
-
-    def frequency_weighted_intersection_over_union(self):
-        freq = np.sum(self.confusion_matrix, axis=1) / np.sum(self.confusion_matrix)
-        iu = np.diag(self.confusion_matrix) / (
-                np.sum(self.confusion_matrix, axis=1) + np.sum(self.confusion_matrix, axis=0) -
-                np.diag(self.confusion_matrix))
-
-        fwiou = (freq[freq > 0] * iu[freq > 0]).sum()
-        return fwiou
-
-    def _generate_matrix(self, gt_image, pre_image):
-        mask = (gt_image >= 0) & (gt_image < self.num_class)
-        label = self.num_class * gt_image[mask].astype('int') + pre_image[mask]
-        count = np.bincount(label, minlength=self.num_class ** 2)
-        confusion_matrix = count.reshape(self.num_class, self.num_class)
-        return confusion_matrix
-
-    def add_batch(self, gt_image, pre_image):
-        assert gt_image.shape == pre_image.shape
-        self.confusion_matrix += self._generate_matrix(gt_image, pre_image)
-
-    def reset(self):
-        self.confusion_matrix = np.zeros((self.num_class,) * 2)
-
-
 def nanmean(x):
     """Computes the arithmetic mean ignoring any NaNs."""
     return torch.mean(x[x == x])
 
 
 def _fast_hist(gt, pred, num_classes):
-    # mask = (gt >= 0) & (gt < num_classes)
+    # mask1 = (true >= 0) & (true < num_classes)
     mask2 = (pred >= 0) & (pred < num_classes)
-    gt = gt.to(torch.int32)
-    pred = pred.to(torch.int32)
-    label = num_classes * gt[mask2].type(torch.int32) + pred[mask2]
-    hist = torch.bincount(label, minlength=num_classes ** 2, )
+    hist = torch.bincount(num_classes * gt[mask2] + pred[mask2], minlength=num_classes ** 2, )
     hist = hist.reshape(num_classes, num_classes).float()
     return hist
 
@@ -210,8 +162,10 @@ def eval_metrics(gt, pred, num_classes):
         avg_jacc: the jaccard index.
         avg_dice: the dice coefficient.
     """
-    gt = gt * 255.
-    pred = pred * 255.
+    gt = (gt * 255.).to(torch.int32)
+    pred = (pred * 255.).to(torch.int32)
+    # true = true.to(torch.int32)
+    # pred = pred.to(torch.int32)
     hist = torch.zeros((num_classes, num_classes))
     for t, p in zip(gt, pred):
         hist += _fast_hist(t.flatten(), p.flatten(), num_classes)
@@ -221,3 +175,62 @@ def eval_metrics(gt, pred, num_classes):
     # avg_dice = dice_coefficient(hist)
     # return overall_acc, avg_per_class_acc, avg_jacc, avg_dice
     return overall_acc
+
+
+def calc_tpr(fpr, tpr):
+    """
+    :param fpr:
+    :param tpr:
+    :return: tpr_0_01, tpr_0_02, tpr_0_05, tpr_0_10, tpr_0_20, tpr_0_50, tpr_1_00, tpr_2_00, tpr_5_00
+    """
+    tpr_0_01 = -1
+    tpr_0_02 = -1
+    tpr_0_05 = -1
+    tpr_0_10 = -1
+    tpr_0_20 = -1
+    tpr_0_50 = -1
+    tpr_1_00 = -1
+    tpr_2_00 = -1
+    tpr_5_00 = -1
+    for i in range(len(fpr)):
+        if fpr[i] > 0.0001 and tpr_0_01 == -1:
+            tpr_0_01 = tpr[i - 1]
+        if fpr[i] > 0.0002 and tpr_0_02 == -1:
+            tpr_0_02 = tpr[i - 1]
+        if fpr[i] > 0.0005 and tpr_0_05 == -1:
+            tpr_0_05 = tpr[i - 1]
+        if fpr[i] > 0.001 and tpr_0_10 == -1:
+            tpr_0_10 = tpr[i - 1]
+        if fpr[i] > 0.002 and tpr_0_20 == -1:
+            tpr_0_20 = tpr[i - 1]
+        if fpr[i] > 0.005 and tpr_0_50 == -1:
+            tpr_0_50 = tpr[i - 1]
+        if fpr[i] > 0.01 and tpr_1_00 == -1:
+            tpr_1_00 = tpr[i - 1]
+        if fpr[i] > 0.02 and tpr_2_00 == -1:
+            tpr_2_00 = tpr[i - 1]
+        if fpr[i] > 0.05 and tpr_5_00 == -1:
+            tpr_5_00 = tpr[i - 1]
+    return tpr_0_01, tpr_0_02, tpr_0_05, tpr_0_10, tpr_0_20, tpr_0_50, tpr_1_00, tpr_2_00, tpr_5_00
+
+
+def show_metrics(y_true, y_pred, y_score, args, pw_acc, mae):
+    # print(metrics.confusion_matrix(y_true, y_pred))
+    # print(metrics.classification_report(y_true, y_pred))
+    # Accuracy
+    acc = metrics.accuracy_score(y_true, y_pred)
+    # AP
+    ap = metrics.average_precision_score(y_true, y_score)
+    # ROC
+    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_score, drop_intermediate=False)
+    # print(fpr, tpr)
+    fnr = 1 - tpr
+    # Equal error rate
+    eer = fnr[np.nanargmin(np.absolute((fnr - fpr)))]
+
+    # tpr_result = calc_tpr(fpr, tpr)
+    roc_auc = metrics.auc(fpr, tpr)
+    # metrics_template = "ACC: {:f} AUC: {:f} EER: {:f} TPR@0.01: {:f} TPR@0.10: {:f} TPR@1.00: {:f}"
+    # print(metrics_template.format(acc, roc_auc, eer, tpr_result[0], tpr_result[3], tpr_result[6]))
+    metrics_template = "ACC: {:f} AP: {:f} AUC: {:f} EER: {:f} PWA: {:f} MAE: {:f}"
+    print(metrics_template.format(acc, ap, roc_auc, eer, pw_acc, mae))

@@ -11,7 +11,7 @@ from torch import hub, optim
 from torch.backends import cudnn
 
 from config import Config
-from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
+from training.datasets import get_dataloader
 from training.models.ae import Decoder, encoder, ActivationLoss, ReconstructionLoss, SegmentationLoss
 from training.tools.metrics import AverageMeter, ProgressMeter, accuracy, eval_metrics
 from training.tools.train_utils import parse_args
@@ -182,7 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
     decoder = Decoder()
 
     print("Initializing Data Loader")
-    train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args, fake_type="FaceShifter")
+    train_sampler, train_loader, val_loader = get_dataloader(model, args)
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():

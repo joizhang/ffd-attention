@@ -6,19 +6,11 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame
-from timm.data import create_transform
 from torch.utils.data import Dataset, DataLoader
 
 from preprocessing.constants import CELEB_DF
-from training.datasets.transform import create_val_test_transform
-
-
-def create_generalization_transform():
-    return A.Compose([
-        A.Blur(blur_limit=(5, 10), p=0.7),
-        A.OneOf([A.RandomBrightnessContrast(), A.FancyPCA(), A.HueSaturationValue()], p=0.7),
-        A.OpticalDistortion(distort_limit=(1., 2.), border_mode=cv2.BORDER_CONSTANT, p=0.5)
-    ])
+from training.datasets.transform import create_generalization_transform, generalization_preprocessing
+from training.datasets.transform import create_train_transform, create_val_test_transform
 
 
 class CelebDFV2Dataset(Dataset):
@@ -43,6 +35,9 @@ class CelebDFV2Dataset(Dataset):
         else:
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
 
+        landmark_path = os.path.join(self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
+        image, mask = generalization_preprocessing(landmark_path, image, label, mask, self.generalization_transform)
+
         # data augmentation
         transformed = self.transform(image=image, mask=mask)
         image = transformed["image"]
@@ -56,9 +51,9 @@ class CelebDFV2Dataset(Dataset):
         return r
 
 
-def get_celeba_df_dataloader(model, args):
+def get_celeb_df_dataloader(model, args):
     train_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train.csv')
-    train_transform = create_transform(model.default_cfg)
+    train_transform = create_train_transform(model.default_cfg)
     train_data = CelebDFV2Dataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
@@ -76,7 +71,7 @@ def get_celeba_df_dataloader(model, args):
     return train_sampler, train_loader, val_loader
 
 
-def get_celeba_df_test_dataloader(model, args):
+def get_celeb_df_test_dataloader(model, args):
     assert os.path.exists(f'data/{CELEB_DF}/data_{CELEB_DF}_test.csv'), 'Please firstly prepare data_test.csv.'
     df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_test.csv')
     test_transform = create_val_test_transform(model.default_cfg)

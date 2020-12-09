@@ -12,6 +12,7 @@ from torch.backends import cudnn
 
 from config import Config
 from training import models
+from training.datasets import get_dataloader
 from training.datasets.dffd_dataset import get_dffd_dataloader
 from training.datasets.face_forensics_dataset import get_face_forensics_dataloader
 from training.tools.train_utils import parse_args, train, validate
@@ -42,12 +43,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = models.__dict__[args.arch](pretrained=True)
 
     print("Initializing Data Loader")
-    if args.prefix == 'dffd':
-        train_sampler, train_loader = get_dffd_dataloader(model, args, 'train', num_workers=0)
-        val_loader = get_dffd_dataloader(model, args, 'validation', shuffle=False)
-    else:
-        train_sampler, train_loader, val_loader = get_face_forensics_dataloader(model, args, fake_type='FaceShifter')
-    # print(next(iter(val_loader)))
+    train_sampler, train_loader, val_loader = get_dataloader(model, args)
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():

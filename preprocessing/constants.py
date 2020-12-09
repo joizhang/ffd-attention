@@ -1,4 +1,6 @@
 # Datasets
-DFFD = 'dffd'
+FACE_FORENSICS_DF = 'ff++_df'
+FACE_FORENSICS_FSH = 'ff++_fsh'
 CELEB_DF = 'celeb-df'
-FACE_FORENSICS = 'ff++'
+DFDC = 'dfdc'
+DFFD = 'dffd'

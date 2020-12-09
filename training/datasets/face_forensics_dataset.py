@@ -8,14 +8,14 @@ import torch
 from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
+from preprocessing.constants import FACE_FORENSICS
+from training.datasets.transform import create_generalization_transform, generalization_preprocessing
 from training.datasets.transform import create_train_transform, create_val_test_transform
-
-FACE_FORENSICS = 'ff++'
 
 
 class FaceForensicsDataset(Dataset):
 
-    def __init__(self, data_root, df: DataFrame, mode, transform: A.Compose, fake_type: str):
+    def __init__(self, data_root, df: DataFrame, mode, transform: A.Compose, fake_type: str, use_generalization=False):
         """
         Args:
             fake_type(str): Deepfakes, Face2Face, FaceShifter, FaceSwap, NeuralTextures
@@ -25,7 +25,9 @@ class FaceForensicsDataset(Dataset):
         self.df = df
         self.mode = mode
         self.transform = transform
+        self.generalization_transform = create_generalization_transform()
         self.fake_type = fake_type
+        self.use_generalization = use_generalization
 
     def __getitem__(self, index):
         video, img_file, label, ori_video, frame = self.df.iloc[index].values
@@ -42,6 +44,11 @@ class FaceForensicsDataset(Dataset):
             image = cv2.imread(img_path, cv2.IMREAD_COLOR)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+
+        if self.mode == 'train' and self.use_generalization:
+            landmark_path = os.path.join(self.original_path, "landmarks", str(ori_video), img_file[:-4] + ".npy")
+            image, mask = generalization_preprocessing(landmark_path, image, label, mask, self.generalization_transform)
+
         # data augmentation
         transformed = self.transform(image=image, mask=mask)
         image = transformed["image"]
@@ -63,10 +70,10 @@ def get_face_forensics_dataloader(model, args, fake_type="Deepfakes"):
     :return:
     """
     train_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_train.csv')
-    # train_df = train_df.iloc[:100]
+    # train_df = train_df.iloc[-1000:]
     train_transform = create_train_transform(model.default_cfg)
     train_data = FaceForensicsDataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform,
-                                      fake_type=fake_type)
+                                      fake_type=fake_type, use_generalization=False)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
     else:
@@ -75,7 +82,7 @@ def get_face_forensics_dataloader(model, args, fake_type="Deepfakes"):
                               sampler=train_sampler, num_workers=args.workers, pin_memory=True, drop_last=True)
 
     val_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_val.csv')
-    # val_df = val_df.iloc[:100]
+    # val_df = val_df.iloc[-1000:]
     val_transform = create_val_test_transform(model.default_cfg)
     val_data = FaceForensicsDataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform,
                                     fake_type=fake_type)
@@ -93,7 +100,7 @@ def get_face_forensics_test_dataloader(model, args, fake_type="Deepfakes"):
     :return:
     """
     test_df = pd.read_csv(f'data/{FACE_FORENSICS}/data_{FACE_FORENSICS}_{fake_type}_test.csv')
-    # test_df = test_df.iloc[:100]
+    # test_df = test_df.iloc[:57265]
     test_transform = create_val_test_transform(model.default_cfg)
     test_data = FaceForensicsDataset(data_root=args.data_dir, df=test_df, mode='test', transform=test_transform,
                                      fake_type=fake_type)

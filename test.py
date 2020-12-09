@@ -131,10 +131,8 @@ def main():
         model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=False)
 
         print("Initializing Data Loader")
-        if args.prefix == 'ff++':
-            test_loader = get_face_forensics_test_dataloader(model, args)
-        else:
-            test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
+        test_loader = get_test_dataloader(model, args)
+
 
         print("Start Testing")
         pw_acc = test(test_loader, model, args)

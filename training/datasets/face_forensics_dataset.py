@@ -9,7 +9,6 @@ from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
 from preprocessing.constants import FACE_FORENSICS
-from training.datasets.transform import create_generalization_transform, generalization_preprocessing
 from training.datasets.transform import create_train_transform, create_val_test_transform
 
 
@@ -25,7 +24,6 @@ class FaceForensicsDataset(Dataset):
         self.df = df
         self.mode = mode
         self.transform = transform
-        self.generalization_transform = create_generalization_transform()
         self.fake_type = fake_type
         self.use_generalization = use_generalization
 
@@ -44,10 +42,6 @@ class FaceForensicsDataset(Dataset):
             image = cv2.imread(img_path, cv2.IMREAD_COLOR)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
-
-        if self.mode == 'train' and self.use_generalization:
-            landmark_path = os.path.join(self.original_path, "landmarks", str(ori_video), img_file[:-4] + ".npy")
-            image, mask = generalization_preprocessing(landmark_path, image, label, mask, self.generalization_transform)
 
         # data augmentation
         transformed = self.transform(image=image, mask=mask)

@@ -14,7 +14,7 @@ from training.models.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_ST
 __all__ = ['encoder', 'Decoder', 'ActivationLoss', 'ReconstructionLoss', 'SegmentationLoss']
 
 default_cfgs = {
-    'xception': {
+    'encoder': {
         'url': '',
         'input_size': (3, 256, 256),
         'pool_size': (10, 10),
@@ -200,7 +200,7 @@ class SegmentationLoss(nn.Module):
 
 
 def encoder():
-    default_cfg = default_cfgs['xception']
+    default_cfg = default_cfgs['encoder']
     model = Encoder()
     model.default_cfg = default_cfg
     return model

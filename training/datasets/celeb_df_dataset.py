@@ -9,7 +9,6 @@ from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
 from preprocessing.constants import CELEB_DF
-from training.datasets.transform import create_generalization_transform, generalization_preprocessing
 from training.datasets.transform import create_train_transform, create_val_test_transform
 
 
@@ -20,7 +19,6 @@ class CelebDFV2Dataset(Dataset):
         self.df = df
         self.mode = mode
         self.transform = transform
-        self.generalization_transform = create_generalization_transform()
 
     def __getitem__(self, index):
         video, img_file, label, ori_video, frame = self.df.iloc[index].values
@@ -34,9 +32,6 @@ class CelebDFV2Dataset(Dataset):
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
-
-        landmark_path = os.path.join(self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
-        image, mask = generalization_preprocessing(landmark_path, image, label, mask, self.generalization_transform)
 
         # data augmentation
         transformed = self.transform(image=image, mask=mask)

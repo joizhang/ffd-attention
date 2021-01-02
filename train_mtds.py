@@ -16,10 +16,10 @@ from training.models.ae import Decoder, encoder, ActivationLoss, ReconstructionL
 from training.tools.metrics import AverageMeter, ProgressMeter, accuracy, eval_metrics
 from training.tools.train_utils import parse_args
 
-torch.backends.cudnn.benchmark = True
-
 CONFIG = Config()
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+torch.backends.cudnn.benchmark = True
 
 
 def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):

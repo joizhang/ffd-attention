@@ -15,10 +15,10 @@ from training import models
 from training.datasets import get_dataloader
 from training.tools.train_utils import parse_args, train, validate
 
-torch.backends.cudnn.benchmark = True
-
 CONFIG = Config()
 hub.set_dir(CONFIG['TORCH_HOME'])
+
+torch.backends.cudnn.benchmark = True
 
 
 def main_worker(gpu, ngpus_per_node, args):

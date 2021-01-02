@@ -39,9 +39,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     print("Initializing Networks")
     model = models.__dict__[args.arch](pretrained=True)
-
-    print("Initializing Data Loader")
-    train_sampler, train_loader, val_loader = get_dataloader(model, args)
+    model_cfg = model.default_cfg
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():
@@ -70,6 +68,14 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         model = torch.nn.DataParallel(model).cuda()
 
+    print("Initializing Data Loader")
+    train_sampler, train_loader, val_loader = get_dataloader(model_cfg, args)
+    loss_functions = {
+        "classifier_loss": nn.CrossEntropyLoss().cuda(),
+        "map_loss": nn.L1Loss().cuda()
+    }
+    optimizer = optim.Adam(model.parameters(), args.lr)
+
     start_epoch = 1
     best_acc1 = 0.
     if args.resume:
@@ -85,12 +91,6 @@ def main_worker(gpu, ngpus_per_node, args):
             print("Loaded checkpoint '{}' (epoch {}, best_acc {})".format(args.resume, start_epoch, best_acc1))
         else:
             print("No checkpoint found at '{}'".format(args.resume))
-
-    loss_functions = {
-        "classifier_loss": nn.CrossEntropyLoss().cuda(),
-        "map_loss": nn.L1Loss().cuda()
-    }
-    optimizer = optim.Adam(model.parameters(), args.lr)
 
     if args.evaluate:
         validate(val_loader, model, args)

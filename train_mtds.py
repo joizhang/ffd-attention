@@ -184,9 +184,6 @@ def main_worker(gpu, ngpus_per_node, args):
     model_cfg = model.default_cfg
     decoder = Decoder()
 
-    print("Initializing Data Loader")
-    train_sampler, train_loader, val_loader = get_dataloader(model_cfg, args)
-
     print("Initializing Distribution")
     if not torch.cuda.is_available():
         print('Using CPU, this will be slow')
@@ -216,6 +213,19 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         model = torch.nn.DataParallel(model).cuda()
 
+    print("Initializing Data Loader")
+    train_sampler, train_loader, val_loader = get_dataloader(model_cfg, args)
+
+    loss_functions = {
+        "act_loss_fn": ActivationLoss(),
+        "rect_loss_fn": ReconstructionLoss(),
+        "seg_loss_fn": SegmentationLoss()
+    }
+    optimizer = {
+        'optimizer_encoder': optim.Adam(model.parameters(), args.lr),
+        'optimizer_decoder': optim.Adam(decoder.parameters(), args.lr),
+    }
+
     start_epoch = 1
     best_acc1 = 0.
     if args.resume:
@@ -231,16 +241,6 @@ def main_worker(gpu, ngpus_per_node, args):
             print("Loaded checkpoint '{}' (epoch {}, best_acc {})".format(args.resume, start_epoch, best_acc1))
         else:
             print("No checkpoint found at '{}'".format(args.resume))
-
-    loss_functions = {
-        "act_loss_fn": ActivationLoss(),
-        "rect_loss_fn": ReconstructionLoss(),
-        "seg_loss_fn": SegmentationLoss()
-    }
-    optimizer = {
-        'optimizer_encoder': optim.Adam(model.parameters(), args.lr),
-        'optimizer_decoder': optim.Adam(decoder.parameters(), args.lr),
-    }
 
     if args.evaluate:
         validate(val_loader, model, decoder, args)

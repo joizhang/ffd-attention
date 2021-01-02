@@ -21,14 +21,14 @@ def get_dataloader(model_cfg, args):
     return train_sampler, train_loader, val_loader
 
 
-def get_test_dataloader(model, args):
+def get_test_dataloader(model_cfg, args):
     if args.prefix == FACE_FORENSICS_DF:
-        test_loader = get_face_forensics_test_dataloader(model, args, fake_type='Deepfakes')
+        test_loader = get_face_forensics_test_dataloader(model_cfg, args, fake_type='Deepfakes')
     elif args.prefix == FACE_FORENSICS_FSH:
-        test_loader = get_face_forensics_test_dataloader(model, args, fake_type='FaceShifter')
+        test_loader = get_face_forensics_test_dataloader(model_cfg, args, fake_type='FaceShifter')
     elif args.prefix == CELEB_DF:
-        test_loader = get_celeb_df_test_dataloader(model, args)
+        test_loader = get_celeb_df_test_dataloader(model_cfg, args)
     else:
-        test_loader = get_dffd_dataloader(model, args, 'test', shuffle=False)
+        test_loader = get_dffd_dataloader(model_cfg, args, 'test', shuffle=False)
 
     return test_loader

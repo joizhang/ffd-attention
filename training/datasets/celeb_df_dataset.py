@@ -46,9 +46,9 @@ class CelebDFV2Dataset(Dataset):
         return r
 
 
-def get_celeb_df_dataloader(model, args):
+def get_celeb_df_dataloader(model_cfg, args):
     train_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train.csv')
-    train_transform = create_train_transform(model.default_cfg)
+    train_transform = create_train_transform(model_cfg)
     train_data = CelebDFV2Dataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
@@ -58,7 +58,7 @@ def get_celeb_df_dataloader(model, args):
                               sampler=train_sampler, num_workers=args.workers, pin_memory=True, drop_last=True)
 
     val_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_val.csv')
-    val_transform = create_val_test_transform(model.default_cfg)
+    val_transform = create_val_test_transform(model_cfg)
     val_data = CelebDFV2Dataset(data_root=args.data_dir, df=val_df, mode='validation', transform=val_transform)
     val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
                             pin_memory=True, drop_last=False)
@@ -66,10 +66,10 @@ def get_celeb_df_dataloader(model, args):
     return train_sampler, train_loader, val_loader
 
 
-def get_celeb_df_test_dataloader(model, args):
+def get_celeb_df_test_dataloader(model_cfg, args):
     assert os.path.exists(f'data/{CELEB_DF}/data_{CELEB_DF}_test.csv'), 'Please firstly prepare data_test.csv.'
     df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_test.csv')
-    test_transform = create_val_test_transform(model.default_cfg)
+    test_transform = create_val_test_transform(model_cfg)
     test_data = CelebDFV2Dataset(args.data_dir, df=df, mode='test', transform=test_transform)
     test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
                              pin_memory=True, drop_last=False)

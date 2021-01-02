@@ -46,8 +46,8 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
         else:
             images, labels, masks = sample['images'], sample['labels'], sample['masks']
 
-        masks[masks >= 0.1] = 1.0
-        masks[masks < 0.1] = 0.0
+        masks[masks >= 0.25] = 1.0
+        masks[masks < 0.25] = 0.0
         masks = masks.long()
 
         # compute output
@@ -181,10 +181,11 @@ def main_worker(gpu, ngpus_per_node, args):
 
     print("Initializing Networks")
     model = encoder()
+    model_cfg = model.default_cfg
     decoder = Decoder()
 
     print("Initializing Data Loader")
-    train_sampler, train_loader, val_loader = get_dataloader(model, args)
+    train_sampler, train_loader, val_loader = get_dataloader(model_cfg, args)
 
     print("Initializing Distribution")
     if not torch.cuda.is_available():

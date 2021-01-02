@@ -34,28 +34,20 @@ def test(test_loader, model, decoder, args):
         end = time.time()
         for batch_idx, sample in enumerate(test_loader):
             images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks']
+            masks[masks >= 0.25] = 1.0
             y_true.extend(labels.tolist())
-
-            # masks[masks >= 0.5] = 1.0
-            # masks[masks < 0.5] = 0.0
-            # masks = masks.long()
 
             # compute output
             latent = model(images).reshape(-1, 2, 64, 16, 16)
             zero_abs = torch.abs(latent[:, 0]).view(latent.shape[0], -1)
             zero = zero_abs.mean(dim=1)
-
             one_abs = torch.abs(latent[:, 1]).view(latent.shape[0], -1)
             one = one_abs.mean(dim=1)
-
             y = torch.eye(2)
             if args.gpu >= 0:
-                y = y.cuda(args.gpu)
-
+                y = y.cuda()
             y = y.index_select(dim=0, index=labels.data.long())
-
             latent = (latent * y[:, :, None, None, None]).reshape(-1, 128, 16, 16)
-
             seg, rect = decoder(latent)
 
             labels_pred = torch.stack((zero, one), dim=1)
@@ -73,7 +65,7 @@ def test(test_loader, model, decoder, args):
             # masks_pred = torch.argmax(masks_pred, dim=1)
             overall_acc = eval_metrics(masks, seg.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
-            mean_avg_err = F.l1_loss(masks.cpu(), seg.cpu())
+            mean_avg_err = F.l1_loss(masks.squeeze().cpu(), seg.cpu())
             mae.update(mean_avg_err, images.size(0))
 
             # measure elapsed time

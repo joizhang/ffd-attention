@@ -35,6 +35,7 @@ def test(test_loader, model, args):
         end = time.time()
         for batch_idx, sample in enumerate(test_loader):
             images, labels, masks = sample['images'].cuda(), sample['labels'].cuda(), sample['masks']
+            masks[masks >= 0.25] = 1.0
             y_true.extend(labels.tolist())
 
             # compute output
@@ -51,7 +52,7 @@ def test(test_loader, model, args):
             top1.update(acc1[0], images.size(0))
             # pixel-wise acc
             masks_pred = F.interpolate(masks_pred, scale_factor=16)
-            # masks_pred = torch.argmax(masks_pred, dim=1)
+            masks_pred[masks_pred >= 0.25] = 1.0
             overall_acc = eval_metrics(masks, masks_pred.cpu(), 256)
             pw_acc.update(overall_acc, images.size(0))
             mean_avg_err = F.l1_loss(masks.cpu(), masks_pred.cpu())
@@ -88,7 +89,7 @@ def main():
 
         print("Start Testing")
         pw_acc, mae = test(test_loader, model, args)
-        pw_acc, mae = 0., 0.
+        # pw_acc, mae = 0., 0.
 
         with open(PICKLE_FILE.format(args.arch, args.prefix), "rb") as f:
             y_true, y_pred, y_score = pickle.load(f)

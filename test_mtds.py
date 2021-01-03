@@ -100,7 +100,7 @@ def main():
         decoder.load_state_dict(decoder_state_dict, strict=True)
 
         print("Initializing Data Loader")
-        test_loader = get_test_dataloader(model, args)
+        test_loader = get_test_dataloader(model.default_cfg, args)
 
         print("Start Testing")
         pw_acc, mae = test(test_loader, model, decoder, args)

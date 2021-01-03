@@ -100,7 +100,7 @@ def train(train_loader, model, decoder, optimizer, loss_functions, epoch, args):
 
         if (batch_idx + 1) % args.print_freq == 0:
             progress.display(batch_idx + 1)
-        if (batch_idx + 1) % 2500 == 0:
+        if (batch_idx + 1) % 3000 == 0:
             break
 
 
@@ -159,6 +159,8 @@ def validate(val_loader, model, decoder, args):
 
             if (batch_idx + 1) % args.print_freq == 0:
                 progress.display(batch_idx + 1)
+            if (batch_idx + 1) % 1000 == 0:
+                break
 
     return top1.avg
 

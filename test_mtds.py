@@ -14,7 +14,7 @@ from training.tools.train_utils import parse_args
 
 torch.backends.cudnn.benchmark = True
 
-PICKLE_FILE = "plot/{}.pickle"
+PICKLE_FILE = "plot/{}/{}_{}.pickle"
 
 
 def test(test_loader, model, decoder, args):
@@ -75,7 +75,8 @@ def test(test_loader, model, decoder, args):
             if (batch_idx + 1) % args.print_freq == 0 or (batch_idx + 1) == len(test_loader):
                 progress.display(batch_idx + 1)
 
-    pickle.dump([y_true, y_pred, y_score], open(PICKLE_FILE.format(args.arch), "wb"))
+    with open(PICKLE_FILE.format(args.prefix, args.arch, args.prefix), "wb") as f:
+        pickle.dump([y_true, y_pred, y_score], f)
 
     return pw_acc.avg, mae.avg
 
@@ -106,7 +107,7 @@ def main():
         pw_acc, mae = test(test_loader, model, decoder, args)
         # pw_acc, mae = 0., 0.
 
-        with open(PICKLE_FILE.format(args.arch, args.prefix), "rb") as f:
+        with open(PICKLE_FILE.format(args.prefix, args.arch, args.prefix), "rb") as f:
             y_true, y_pred, y_score = pickle.load(f)
         print(len(y_true), len(y_pred), len(y_score))
         show_metrics(y_true, y_pred, y_score, args, pw_acc, mae)

@@ -47,7 +47,12 @@ class CelebDFV2Dataset(Dataset):
 
 
 def get_celeb_df_dataloader(model_cfg, args):
-    train_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train.csv')
+    # train_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train.csv')
+    train_real_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train_real.csv')
+    train_fake_df = pd.read_csv(f'data/{CELEB_DF}/data_{CELEB_DF}_train_fake.csv')
+    train_fake_df = train_fake_df.sample(len(train_real_df.index))
+    train_df = pd.concat([train_real_df, train_fake_df])
+
     train_transform = create_train_transform(model_cfg)
     train_data = CelebDFV2Dataset(data_root=args.data_dir, df=train_df, mode='train', transform=train_transform)
     if args.distributed:

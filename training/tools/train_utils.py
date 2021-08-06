@@ -4,6 +4,7 @@ import time
 import torch
 import torch.nn.functional as F
 
+from constants import *
 from training import models
 from training.tools.metrics import ProgressMeter, AverageMeter, accuracy, eval_metrics
 
@@ -15,15 +16,21 @@ model_names = sorted(name for name in models.__dict__
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', metavar='DIR', help='path to dataset')
-    parser.add_argument('--arch', metavar='ARCH', default='vgg16', choices=model_names,
-                        help='model architecture: ' + ' | '.join(model_names) + ' (default: vgg16)')
+    parser.add_argument('--arch', metavar='ARCH', default='xception', choices=model_names,
+                        help='model architecture: ' + ' | '.join(model_names) + ' (default: xception)')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('--prefix', type=str, default='dffd')
+    parser.add_argument('--prefix', type=str, default=FACE_FORENSICS,
+                        choices=[FACE_FORENSICS, FACE_FORENSICS_DF, FACE_FORENSICS_F2F,
+                                 FACE_FORENSICS_FSW, FACE_FORENSICS_NT, FACE_FORENSICS_FSH,
+                                 CELEB_DF, DEEPER_FORENSICS, DFDC],
+                        help='dataset')
+    parser.add_argument('--compression-version', type=str, default='c23', choices=['c23', 'c40'])
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='batch size')
-    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
+    parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
+                        metavar='LR', help='initial learning rate', dest='lr')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
@@ -35,6 +42,8 @@ def parse_args():
                         help='evaluate model on validation set')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
+    parser.add_argument('--use-amp', action='store_true',
+                        help='Automatic Mixed Precision')
 
     parser.add_argument('--world-size', default=-1, type=int,
                         help='number of nodes for distributed training')

@@ -148,4 +148,4 @@ def xception_butd(pretrained=False, num_classes=1000, in_chans=3):
 
 def xception_se(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
     """[Squeeze-and-Excitation Networks](https://arxiv.org/abs/1709.01507)"""
-    return _xception(pretrained, num_classes, in_chans, SEAttention, **kwargs)
+    return _xception(pretrained, num_classes, in_chans, SEAttention)

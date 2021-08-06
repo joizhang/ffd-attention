@@ -199,7 +199,7 @@ class SegmentationLoss(nn.Module):
                          groundtruth.data.view(groundtruth.shape[0], groundtruth.shape[2] * groundtruth.shape[3]))
 
 
-def encoder():
+def encoder(pretrained=False):
     default_cfg = default_cfgs['encoder']
     model = Encoder()
     model.default_cfg = default_cfg

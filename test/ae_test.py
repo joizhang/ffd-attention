@@ -15,7 +15,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = CONFIG['CUDA_VISIBLE_DEVICES']
 torch.backends.cudnn.benchmark = True
 
 
-class XceptionTestCase(unittest.TestCase):
+class AutoEncoderTestCase(unittest.TestCase):
 
     def test_summary_encoder(self):
         self.assertTrue(torch.cuda.is_available())

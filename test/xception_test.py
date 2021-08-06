@@ -26,7 +26,7 @@ class XceptionTestCase(unittest.TestCase):
         model = xception(pretrained=True)
         model = model.cuda()
         input_size = model.default_cfg['input_size']
-        summary(model, input_size=input_size, batch_size=10)
+        summary(model, input_size=input_size)
 
     def test_xception(self):
         model = xception(pretrained=True)

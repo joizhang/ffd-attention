@@ -77,7 +77,7 @@ class SEAttention(nn.Module):
 
 class XceptionMap(Xception):
 
-    def __init__(self, num_classes, in_chans, attn_type, **kwargs):
+    def __init__(self, num_classes, in_chans, attn_type):
         """ Constructor
         Args:
             num_classes (int): number of classes
@@ -127,23 +127,23 @@ class XceptionMap(Xception):
         return x, mask
 
 
-def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None, **kwargs):
+def _xception(pretrained=False, num_classes=1000, in_chans=3, attn_type=None):
     default_cfg = default_cfgs['xception']
-    model = XceptionMap(num_classes=num_classes, in_chans=in_chans, attn_type=attn_type, **kwargs)
+    model = XceptionMap(num_classes=num_classes, in_chans=in_chans, attn_type=attn_type)
     model.default_cfg = default_cfg
     if pretrained:
         load_pretrained(model, default_cfg, num_classes, in_chans, strict=False)
     return model
 
 
-def xception_reg(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
+def xception_reg(pretrained=False, num_classes=1000, in_chans=3):
     """[On the Detection of Digital Face Manipulation](https://arxiv.org/abs/1910.01717)"""
-    return _xception(pretrained, num_classes, in_chans, RegAttention, **kwargs)
+    return _xception(pretrained, num_classes, in_chans, RegAttention)
 
 
-def xception_butd(pretrained=False, num_classes=1000, in_chans=3, **kwargs):
+def xception_butd(pretrained=False, num_classes=1000, in_chans=3):
     """[Residual Attention Network for Image Classification](https://arxiv.org/abs/1704.06904)"""
-    return _xception(pretrained, num_classes, in_chans, BottomUpTopDownAttention, **kwargs)
+    return _xception(pretrained, num_classes, in_chans, BottomUpTopDownAttention)
 
 
 def xception_se(pretrained=False, num_classes=1000, in_chans=3, **kwargs):

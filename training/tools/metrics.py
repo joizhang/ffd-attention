@@ -162,10 +162,12 @@ def eval_metrics(gt, pred, num_classes):
         avg_jacc: the jaccard index.
         avg_dice: the dice coefficient.
     """
-    gt = (gt * 255.).to(torch.int32)
-    pred = (pred * 255.).to(torch.int32)
-    # true = true.to(torch.int32)
-    # pred = pred.to(torch.int32)
+    if num_classes == 2:
+        gt = gt.long()
+        pred = pred.long()
+    else:
+        gt = (gt * 255.).to(torch.int32)
+        pred = (pred * 255.).to(torch.int32)
     hist = torch.zeros((num_classes, num_classes))
     for t, p in zip(gt, pred):
         hist += _fast_hist(t.flatten(), p.flatten(), num_classes)
@@ -175,6 +177,22 @@ def eval_metrics(gt, pred, num_classes):
     # avg_dice = dice_coefficient(hist)
     # return overall_acc, avg_per_class_acc, avg_jacc, avg_dice
     return overall_acc
+
+
+def f1_score(gt, pred):
+    assert gt.ndim == 1
+    assert pred.ndim == 1
+
+    tp = (gt * pred).sum().to(torch.float32)
+    tn = ((1 - gt) * (1 - pred)).sum().to(torch.float32)
+    fp = ((1 - gt) * pred).sum().to(torch.float32)
+    fn = (gt * (1 - pred)).sum().to(torch.float32)
+
+    epsilon = 1e-7
+    precision = tp / (tp + fp + epsilon)
+    recall = tp / (tp + fn + epsilon)
+    f1 = 2 * (precision * recall) / (precision + recall + epsilon)
+    return f1
 
 
 def calc_tpr(fpr, tpr):
@@ -214,8 +232,8 @@ def calc_tpr(fpr, tpr):
     return tpr_0_01, tpr_0_02, tpr_0_05, tpr_0_10, tpr_0_20, tpr_0_50, tpr_1_00, tpr_2_00, tpr_5_00
 
 
-def show_metrics(y_true, y_pred, y_score, args, pw_acc, mae):
-    # print(metrics.confusion_matrix(y_true, y_pred))
+def show_metrics(y_true, y_pred, y_score, pw_acc, mae):
+    print(metrics.confusion_matrix(y_true, y_pred))
     # print(metrics.classification_report(y_true, y_pred))
     # Accuracy
     acc = metrics.accuracy_score(y_true, y_pred)

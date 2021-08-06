@@ -8,7 +8,7 @@ import torch
 from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
-from preprocessing.constants import FACE_FORENSICS
+from constants import FACE_FORENSICS
 from training.datasets.transform import create_train_transform, create_val_test_transform
 
 

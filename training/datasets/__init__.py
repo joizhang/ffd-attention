@@ -1,4 +1,4 @@
-from preprocessing.constants import FACE_FORENSICS_DF, FACE_FORENSICS_FSH, CELEB_DF, DFDC
+from constants import FACE_FORENSICS_DF, FACE_FORENSICS_FSH, CELEB_DF, DFDC
 from training.datasets.celeb_df_dataset import get_celeb_df_dataloader, get_celeb_df_test_dataloader
 from training.datasets.dfdc_dataset import get_dfdc_dataloader, get_dfdc_test_dataloader
 from training.datasets.dffd_dataset import get_dffd_dataloader

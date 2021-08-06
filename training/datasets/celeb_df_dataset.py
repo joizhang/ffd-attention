@@ -8,7 +8,7 @@ import torch
 from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
-from preprocessing.constants import CELEB_DF
+from constants import CELEB_DF
 from training.datasets.transform import create_train_transform, create_val_test_transform
 
 

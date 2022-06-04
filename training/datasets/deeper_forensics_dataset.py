@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from config import Config
 from constants import DEEPER_FORENSICS
-from training.datasets.transform import create_train_transform, create_val_test_transform
+from training.datasets.transform_v2 import create_train_transform, create_val_test_transform
 
 CONFIG = Config()
 ORI_ROOT = CONFIG['ORI_ROOT']

@@ -7,7 +7,7 @@ import numpy as np
 from timm.data import create_transform
 from torch.utils.data import Dataset, DataLoader
 
-from training.datasets.transform import create_val_test_transform
+from training.datasets.transform_v2 import create_val_test_transform
 
 """
 1. Real face images: FFHQ, CelebA

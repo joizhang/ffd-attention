@@ -9,7 +9,7 @@ from pandas import DataFrame
 from torch.utils.data import Dataset, DataLoader
 
 from constants import CELEB_DF
-from training.datasets.transform import create_train_transform, create_val_test_transform
+from training.datasets.transform_v2 import create_train_transform, create_val_test_transform
 
 
 class CelebDFV2Dataset(Dataset):
